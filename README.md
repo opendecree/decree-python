@@ -1,12 +1,12 @@
 # OpenDecree Python SDK
 
-[![CI](https://github.com/zeevdr/decree-python/actions/workflows/ci.yml/badge.svg)](https://github.com/zeevdr/decree-python/actions/workflows/ci.yml)
+[![CI](https://github.com/opendecree/decree-python/actions/workflows/ci.yml/badge.svg)](https://github.com/opendecree/decree-python/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/opendecree)](https://pypi.org/project/opendecree/)
 [![Python](https://img.shields.io/pypi/pyversions/opendecree)](https://pypi.org/project/opendecree/)
-[![Coverage](https://img.shields.io/badge/coverage-98%25-brightgreen)](https://github.com/zeevdr/decree-python)
-[![License](https://img.shields.io/github/license/zeevdr/decree-python)](LICENSE)
+[![Coverage](https://img.shields.io/badge/coverage-98%25-brightgreen)](https://github.com/opendecree/decree-python)
+[![License](https://img.shields.io/github/license/opendecree/decree-python)](LICENSE)
 
-Python SDK for [OpenDecree](https://github.com/zeevdr/decree) — schema-driven configuration management.
+Python SDK for [OpenDecree](https://github.com/opendecree/decree) — schema-driven configuration management.
 
 > **Alpha** — This SDK is under active development. APIs and behavior may change without notice between versions.
 
@@ -78,7 +78,7 @@ Runnable examples in the [`examples/`](examples/) directory:
 - [Watching](sdk/docs/watching.md)
 - [Async Usage](sdk/docs/async.md)
 
-For detailed concepts (schemas, typed values, versioning, auth), see the [main OpenDecree docs](https://github.com/zeevdr/decree).
+For detailed concepts (schemas, typed values, versioning, auth), see the [main OpenDecree docs](https://github.com/opendecree/decree).
 
 ## Requirements
 

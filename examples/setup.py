@@ -36,7 +36,7 @@ def main() -> None:
             tenant_id = line.split()[1]
             tenant_id_file.write_text(tenant_id)
             print(result.stdout, end="")
-            print(f"Tenant ID written to .tenant-id")
+            print("Tenant ID written to .tenant-id")
             return
 
     print(f"Could not parse tenant ID from output:\n{result.stdout}", file=sys.stderr)

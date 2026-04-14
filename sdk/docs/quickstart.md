@@ -106,4 +106,4 @@ with ConfigClient("localhost:9090", subject="myapp") as client:
 - [Configuration](configuration.md) — all client options (auth, TLS, retry, timeouts)
 - [Watching](watching.md) — live subscriptions and change patterns
 - [Async Usage](async.md) — async client and watcher
-- [OpenDecree concepts](https://github.com/zeevdr/decree) — schemas, typed values, versioning
+- [OpenDecree concepts](https://github.com/opendecree/decree) — schemas, typed values, versioning

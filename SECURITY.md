@@ -6,12 +6,7 @@ If you discover a security vulnerability in the OpenDecree Python SDK, please re
 
 **Do not open a public GitHub issue for security vulnerabilities.**
 
-Instead, please email **via GitHub Security Advisories** with:
-
-1. A description of the vulnerability
-2. Steps to reproduce
-3. The potential impact
-4. Any suggested fix (optional)
+Instead, please [report it via GitHub Security Advisories](https://github.com/opendecree/decree-python/security/advisories/new).
 
 You should receive a response within 48 hours. We will work with you to understand and address the issue before any public disclosure.
 

@@ -19,7 +19,7 @@ from contextlib import asynccontextmanager
 from datetime import timedelta
 from pathlib import Path
 
-from opendecree import AsyncConfigClient, AsyncConfigWatcher
+from opendecree import AsyncConfigClient
 
 # Watcher fields — populated during lifespan startup.
 rate_limit: object = None

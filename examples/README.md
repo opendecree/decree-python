@@ -60,4 +60,4 @@ make down
 ## Learn more
 
 - [Python SDK on PyPI](https://pypi.org/project/opendecree/)
-- [OpenDecree docs](https://github.com/zeevdr/decree)
+- [OpenDecree docs](https://github.com/opendecree/decree)

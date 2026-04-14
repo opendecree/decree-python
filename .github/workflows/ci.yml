@@ -1,3 +1,8 @@
+# CI pipeline for the OpenDecree Python SDK.
+#
+# Jobs: lint, typecheck, test (matrix: 3.11-3.13), examples → check (alls-green gate)
+# The check job aggregates all results for branch protection.
+
 name: CI
 
 on:
@@ -7,37 +12,120 @@ on:
     branches: [main]
   workflow_call:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
 jobs:
   lint:
+    name: Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install ruff
-      - run: ruff check sdk/src/ sdk/tests/
-      - run: ruff format --check sdk/src/ sdk/tests/
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Check lint
+        run: ruff check sdk/src/ sdk/tests/
+
+      - name: Check formatting
+        run: ruff format --check sdk/src/ sdk/tests/
 
   typecheck:
+    name: Typecheck
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -e "sdk[dev]"
-      - run: cd sdk && mypy src/
+          cache: pip
+          cache-dependency-path: sdk/pyproject.toml
+
+      - name: Install SDK with dev dependencies
+        run: pip install -e "sdk[dev]"
+
+      - name: Run mypy
+        run: cd sdk && mypy src/
 
   test:
+    name: Test (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - run: pip install -e "sdk[dev]"
-      - run: cd sdk && pytest --cov --cov-report=term-missing
+          cache: pip
+          cache-dependency-path: sdk/pyproject.toml
+
+      - name: Install SDK with dev dependencies
+        run: pip install -e "sdk[dev]"
+
+      - name: Run tests with coverage
+        run: cd sdk && pytest --cov --cov-report=term-missing
+
+  examples:
+    name: Examples
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: sdk/pyproject.toml
+
+      - name: Install SDK
+        run: pip install -e sdk/
+
+      - name: Compile-check all examples
+        run: |
+          python -m py_compile examples/quickstart/main.py
+          python -m py_compile examples/async-client/main.py
+          python -m py_compile examples/live-config/main.py
+          python -m py_compile examples/error-handling/main.py
+          python -m py_compile examples/setup.py
+
+  check:
+    name: CI check
+    if: always()
+    needs: [lint, typecheck, test, examples]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: re-actors/alls-green@release/v1
+        with:
+          jobs: ${{ toJSON(needs) }}

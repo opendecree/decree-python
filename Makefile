@@ -6,9 +6,12 @@ DOCKER_RUN_ROOT := docker run --rm -v $(CURDIR):/workspace -v $(CURDIR)/../decre
 PROTO_DIR := /proto
 GEN_DIR   := sdk/src/opendecree/_generated
 
-.PHONY: all generate lint format typecheck test build clean tools docs help
+.PHONY: all generate lint format typecheck test build clean tools docs pre-commit help
 
 all: generate lint typecheck test
+
+## pre-commit: Run local checks before committing (skip codegen)
+pre-commit: lint typecheck test
 
 ## tools: Build the tools Docker image (only when Dockerfile.tools changes)
 tools: $(TOOLS_SENTINEL)

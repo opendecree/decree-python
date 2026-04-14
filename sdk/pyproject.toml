@@ -39,10 +39,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/zeevdr/decree-python"
-Documentation = "https://github.com/zeevdr/decree"
-Repository = "https://github.com/zeevdr/decree-python"
-Issues = "https://github.com/zeevdr/decree-python/issues"
+Homepage = "https://github.com/opendecree/decree-python"
+Documentation = "https://github.com/opendecree/decree"
+Repository = "https://github.com/opendecree/decree-python"
+Issues = "https://github.com/opendecree/decree-python/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]

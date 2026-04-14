@@ -19,7 +19,6 @@ from opendecree import (
     InvalidArgumentError,
     NotFoundError,
     RetryConfig,
-    UnavailableError,
 )
 
 
