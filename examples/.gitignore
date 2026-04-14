@@ -1,0 +1,4 @@
+.tenant-id
+__pycache__/
+*.pyc
+.venv/

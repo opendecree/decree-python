@@ -8,6 +8,8 @@
 
 Python SDK for [OpenDecree](https://github.com/zeevdr/decree) — schema-driven configuration management.
 
+> **Alpha** — This SDK is under active development. APIs and behavior may change without notice between versions.
+
 ## Install
 
 ```bash

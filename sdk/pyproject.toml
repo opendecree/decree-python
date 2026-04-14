@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "opendecree"
 version = "0.1.0"
-description = "Python SDK for OpenDecree — schema-driven configuration management"
+description = "Python SDK for OpenDecree — schema-driven configuration management (alpha)"
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.11"

@@ -43,6 +43,21 @@ client = ConfigClient(
 )
 ```
 
+Non-superadmin roles require a `tenant_id`. For users with access to multiple tenants,
+pass a comma-separated list:
+
+```python
+client = ConfigClient(
+    "localhost:9090",
+    subject="alice",
+    role="admin",
+    tenant_id="tenant-123,tenant-456",  # access to multiple tenants
+)
+```
+
+Each API call specifies which tenant to operate on via the `tenant_id` parameter.
+The server validates that the requested tenant is in the caller's allowed list.
+
 ### Bearer token
 
 For JWT-enabled servers, pass a token instead:
@@ -54,6 +69,7 @@ client = ConfigClient(
 )
 ```
 
+The JWT `tenant_ids` claim (array) determines which tenants the caller can access.
 When a `token` is provided, metadata headers (`subject`, `role`, `tenant_id`) are ignored.
 
 ## TLS
