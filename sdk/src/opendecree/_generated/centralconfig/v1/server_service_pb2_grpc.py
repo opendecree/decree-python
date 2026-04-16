@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-from centralconfig.v1 import version_service_pb2 as centralconfig_dot_v1_dot_version__service__pb2
+from centralconfig.v1 import server_service_pb2 as centralconfig_dot_v1_dot_server__service__pb2
 
 GRPC_GENERATED_VERSION = '1.80.0'
 GRPC_VERSION = grpc.__version__
@@ -18,15 +18,16 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + ' but the generated code in centralconfig/v1/version_service_pb2_grpc.py depends on'
+        + ' but the generated code in centralconfig/v1/server_service_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
     )
 
 
-class VersionServiceStub(object):
-    """VersionService provides server version information.
+class ServerServiceStub(object):
+    """ServerService provides server metadata and capability discovery.
+    Always registered, no authentication required.
     """
 
     def __init__(self, channel):
@@ -35,46 +36,48 @@ class VersionServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.GetServerVersion = channel.unary_unary(
-                '/centralconfig.v1.VersionService/GetServerVersion',
-                request_serializer=centralconfig_dot_v1_dot_version__service__pb2.GetServerVersionRequest.SerializeToString,
-                response_deserializer=centralconfig_dot_v1_dot_version__service__pb2.GetServerVersionResponse.FromString,
+        self.GetServerInfo = channel.unary_unary(
+                '/centralconfig.v1.ServerService/GetServerInfo',
+                request_serializer=centralconfig_dot_v1_dot_server__service__pb2.GetServerInfoRequest.SerializeToString,
+                response_deserializer=centralconfig_dot_v1_dot_server__service__pb2.GetServerInfoResponse.FromString,
                 _registered_method=True)
 
 
-class VersionServiceServicer(object):
-    """VersionService provides server version information.
+class ServerServiceServicer(object):
+    """ServerService provides server metadata and capability discovery.
+    Always registered, no authentication required.
     """
 
-    def GetServerVersion(self, request, context):
-        """GetServerVersion returns the server's build version and commit hash.
+    def GetServerInfo(self, request, context):
+        """GetServerInfo returns the server's version, commit hash, and enabled features.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
 
-def add_VersionServiceServicer_to_server(servicer, server):
+def add_ServerServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'GetServerVersion': grpc.unary_unary_rpc_method_handler(
-                    servicer.GetServerVersion,
-                    request_deserializer=centralconfig_dot_v1_dot_version__service__pb2.GetServerVersionRequest.FromString,
-                    response_serializer=centralconfig_dot_v1_dot_version__service__pb2.GetServerVersionResponse.SerializeToString,
+            'GetServerInfo': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetServerInfo,
+                    request_deserializer=centralconfig_dot_v1_dot_server__service__pb2.GetServerInfoRequest.FromString,
+                    response_serializer=centralconfig_dot_v1_dot_server__service__pb2.GetServerInfoResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'centralconfig.v1.VersionService', rpc_method_handlers)
+            'centralconfig.v1.ServerService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('centralconfig.v1.VersionService', rpc_method_handlers)
+    server.add_registered_method_handlers('centralconfig.v1.ServerService', rpc_method_handlers)
 
 
  # This class is part of an EXPERIMENTAL API.
-class VersionService(object):
-    """VersionService provides server version information.
+class ServerService(object):
+    """ServerService provides server metadata and capability discovery.
+    Always registered, no authentication required.
     """
 
     @staticmethod
-    def GetServerVersion(request,
+    def GetServerInfo(request,
             target,
             options=(),
             channel_credentials=None,
@@ -87,9 +90,9 @@ class VersionService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/centralconfig.v1.VersionService/GetServerVersion',
-            centralconfig_dot_v1_dot_version__service__pb2.GetServerVersionRequest.SerializeToString,
-            centralconfig_dot_v1_dot_version__service__pb2.GetServerVersionResponse.FromString,
+            '/centralconfig.v1.ServerService/GetServerInfo',
+            centralconfig_dot_v1_dot_server__service__pb2.GetServerInfoRequest.SerializeToString,
+            centralconfig_dot_v1_dot_server__service__pb2.GetServerInfoResponse.FromString,
             options,
             channel_credentials,
             insecure,
