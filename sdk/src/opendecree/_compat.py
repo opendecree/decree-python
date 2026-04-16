@@ -1,6 +1,6 @@
 """Server version compatibility checking.
 
-Provides runtime version checking against the VersionService endpoint.
+Provides runtime version checking against the ServerService endpoint.
 Results are cached per client instance.
 """
 
@@ -15,17 +15,17 @@ from opendecree.types import ServerVersion
 
 
 def fetch_server_version(stub: Any, pb2: Any, timeout: float) -> ServerVersion:
-    """Call VersionService.GetServerVersion and return a ServerVersion.
+    """Call ServerService.GetServerInfo and return a ServerVersion.
 
     Args:
-        stub: VersionServiceStub instance.
-        pb2: version_service_pb2 module.
+        stub: ServerServiceStub instance.
+        pb2: server_service_pb2 module.
         timeout: RPC timeout in seconds.
 
     Returns:
         ServerVersion with version and commit strings.
     """
-    resp = stub.GetServerVersion(pb2.GetServerVersionRequest(), timeout=timeout)
+    resp = stub.GetServerInfo(pb2.GetServerInfoRequest(), timeout=timeout)
     return ServerVersion(version=resp.version, commit=resp.commit)
 
 
@@ -33,14 +33,14 @@ async def async_fetch_server_version(stub: Any, pb2: Any, timeout: float) -> Ser
     """Async variant of fetch_server_version.
 
     Args:
-        stub: VersionServiceStub instance (async).
-        pb2: version_service_pb2 module.
+        stub: ServerServiceStub instance (async).
+        pb2: server_service_pb2 module.
         timeout: RPC timeout in seconds.
 
     Returns:
         ServerVersion with version and commit strings.
     """
-    resp = await stub.GetServerVersion(pb2.GetServerVersionRequest(), timeout=timeout)
+    resp = await stub.GetServerInfo(pb2.GetServerInfoRequest(), timeout=timeout)
     return ServerVersion(version=resp.version, commit=resp.commit)
 
 

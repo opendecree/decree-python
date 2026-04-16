@@ -46,7 +46,7 @@ class Change:
 
 @dataclass(frozen=True, slots=True)
 class ServerVersion:
-    """Server version information from the VersionService.
+    """Server version information from the ServerService.
 
     Attributes:
         version: Semantic version string (e.g., ``"0.3.1"``).
