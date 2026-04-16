@@ -106,11 +106,11 @@ def test_fetch_server_version():
     resp = MagicMock()
     resp.version = "0.3.1"
     resp.commit = "abc123"
-    stub.GetServerVersion.return_value = resp
+    stub.GetServerInfo.return_value = resp
 
     sv = fetch_server_version(stub, pb2, timeout=5.0)
     assert sv == ServerVersion(version="0.3.1", commit="abc123")
-    stub.GetServerVersion.assert_called_once()
+    stub.GetServerInfo.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -120,7 +120,7 @@ async def test_async_fetch_server_version():
     resp = MagicMock()
     resp.version = "0.3.1"
     resp.commit = "abc123"
-    stub.GetServerVersion = AsyncMock(return_value=resp)
+    stub.GetServerInfo = AsyncMock(return_value=resp)
 
     sv = await async_fetch_server_version(stub, pb2, timeout=5.0)
     assert sv == ServerVersion(version="0.3.1", commit="abc123")
@@ -141,7 +141,7 @@ def test_client_server_version_cached():
         resp = MagicMock()
         resp.version = "0.3.1"
         resp.commit = "abc123"
-        mock_stub.GetServerVersion.return_value = resp
+        mock_stub.GetServerInfo.return_value = resp
         client._version_stub = mock_stub
         client._version_pb2 = MagicMock()
         client._server_version = None
@@ -149,12 +149,12 @@ def test_client_server_version_cached():
         # First call fetches
         v1 = client.server_version
         assert v1.version == "0.3.1"
-        assert mock_stub.GetServerVersion.call_count == 1
+        assert mock_stub.GetServerInfo.call_count == 1
 
         # Second call returns cached
         v2 = client.server_version
         assert v2 is v1
-        assert mock_stub.GetServerVersion.call_count == 1
+        assert mock_stub.GetServerInfo.call_count == 1
 
 
 def test_client_check_compatibility_passes():

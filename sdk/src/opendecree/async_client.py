@@ -82,12 +82,12 @@ class AsyncConfigClient:
         self._pb2 = cs_pb2
 
         from opendecree._generated.centralconfig.v1 import (
-            version_service_pb2,
-            version_service_pb2_grpc,
+            server_service_pb2,
+            server_service_pb2_grpc,
         )
 
-        self._version_stub = version_service_pb2_grpc.VersionServiceStub(self._channel)
-        self._version_pb2 = version_service_pb2
+        self._version_stub = server_service_pb2_grpc.ServerServiceStub(self._channel)
+        self._version_pb2 = server_service_pb2
         self._server_version: ServerVersion | None = None
 
     async def close(self) -> None:
