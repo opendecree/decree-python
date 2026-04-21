@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Community Discussions
+    url: https://github.com/orgs/opendecree/discussions
+    about: Questions, ideas, and show-and-tell — ask here before filing an issue.
