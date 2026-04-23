@@ -3,8 +3,9 @@
 [![CI](https://github.com/opendecree/decree-python/actions/workflows/ci.yml/badge.svg)](https://github.com/opendecree/decree-python/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/opendecree)](https://pypi.org/project/opendecree/)
 [![Python](https://img.shields.io/pypi/pyversions/opendecree)](https://pypi.org/project/opendecree/)
-[![Coverage](https://img.shields.io/badge/coverage-98%25-brightgreen)](https://github.com/opendecree/decree-python)
+[![Downloads](https://img.shields.io/pypi/dm/opendecree)](https://pypi.org/project/opendecree/)
 [![License](https://img.shields.io/github/license/opendecree/decree-python)](LICENSE)
+[![Project Status: WIP](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
 
 Python SDK for [OpenDecree](https://github.com/opendecree/decree) — schema-driven configuration management.
 
