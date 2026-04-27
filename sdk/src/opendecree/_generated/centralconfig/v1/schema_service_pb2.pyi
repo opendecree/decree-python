@@ -640,22 +640,34 @@ class ExportSchemaRequest(_message.Message):
 
     ID_FIELD_NUMBER: _builtins.int
     VERSION_FIELD_NUMBER: _builtins.int
+    SPEC_VERSION_FIELD_NUMBER: _builtins.int
     id: _builtins.str
     """Schema ID (UUID)."""
     version: _builtins.int
     """Schema version to export. If omitted, exports the latest version."""
+    spec_version: _builtins.str
+    """Schema-format spec version to emit (e.g. "v1"). When omitted, defaults
+    to the highest version the server supports. The server returns
+    InvalidArgument if the requested version is not registered.
+    """
     def __init__(
         self,
         *,
         id: _builtins.str = ...,
         version: _builtins.int | None = ...,
+        spec_version: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_version", b"_version", "version", b"version"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_spec_version", b"_spec_version", "_version", b"_version", "spec_version", b"spec_version", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_version", b"_version", "id", b"id", "version", b"version"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_spec_version", b"_spec_version", "_version", b"_version", "id", b"id", "spec_version", b"spec_version", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__spec_version: _TypeAlias = _typing.Literal["spec_version"]  # noqa: Y015
+    _WhichOneofArgType__spec_version: _TypeAlias = _typing.Literal["_spec_version", b"_spec_version"]  # noqa: Y015
     _WhichOneofReturnType__version: _TypeAlias = _typing.Literal["version"]  # noqa: Y015
     _WhichOneofArgType__version: _TypeAlias = _typing.Literal["_version", b"_version"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__spec_version) -> _WhichOneofReturnType__spec_version | None: ...
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__version) -> _WhichOneofReturnType__version | None: ...
 
 Global___ExportSchemaRequest: _TypeAlias = ExportSchemaRequest  # noqa: Y015
@@ -666,7 +678,7 @@ class ExportSchemaResponse(_message.Message):
 
     YAML_CONTENT_FIELD_NUMBER: _builtins.int
     yaml_content: _builtins.bytes
-    """YAML-encoded schema (syntax v1). Includes schema name, description,
+    """YAML-encoded schema (spec_version v1). Includes schema name, description,
     version, and all field definitions with OAS-style constraint naming.
     Server-generated fields (id, checksum, published, created_at) are excluded.
     """
@@ -687,7 +699,7 @@ class ImportSchemaRequest(_message.Message):
     YAML_CONTENT_FIELD_NUMBER: _builtins.int
     AUTO_PUBLISH_FIELD_NUMBER: _builtins.int
     yaml_content: _builtins.bytes
-    """YAML-encoded schema (syntax v1). Must include `syntax`, `name`, and `fields`.
+    """YAML-encoded schema (spec_version v1). Must include `spec_version`, `name`, and `fields`.
 
     Import uses full-replace semantics:
     - If no schema with this name exists: creates a new schema with version 1.

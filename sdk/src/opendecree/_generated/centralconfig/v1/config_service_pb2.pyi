@@ -614,22 +614,34 @@ class ExportConfigRequest(_message.Message):
 
     TENANT_ID_FIELD_NUMBER: _builtins.int
     VERSION_FIELD_NUMBER: _builtins.int
+    SPEC_VERSION_FIELD_NUMBER: _builtins.int
     tenant_id: _builtins.str
     """Tenant ID (UUID)."""
     version: _builtins.int
     """Config version to export. If omitted, exports the latest version."""
+    spec_version: _builtins.str
+    """Config-format spec version to emit (e.g. "v1"). When omitted, defaults
+    to the highest version the server supports. The server returns
+    InvalidArgument if the requested version is not registered.
+    """
     def __init__(
         self,
         *,
         tenant_id: _builtins.str = ...,
         version: _builtins.int | None = ...,
+        spec_version: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_version", b"_version", "version", b"version"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_spec_version", b"_spec_version", "_version", b"_version", "spec_version", b"spec_version", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_version", b"_version", "tenant_id", b"tenant_id", "version", b"version"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_spec_version", b"_spec_version", "_version", b"_version", "spec_version", b"spec_version", "tenant_id", b"tenant_id", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__spec_version: _TypeAlias = _typing.Literal["spec_version"]  # noqa: Y015
+    _WhichOneofArgType__spec_version: _TypeAlias = _typing.Literal["_spec_version", b"_spec_version"]  # noqa: Y015
     _WhichOneofReturnType__version: _TypeAlias = _typing.Literal["version"]  # noqa: Y015
     _WhichOneofArgType__version: _TypeAlias = _typing.Literal["_version", b"_version"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__spec_version) -> _WhichOneofReturnType__spec_version | None: ...
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__version) -> _WhichOneofReturnType__version | None: ...
 
 Global___ExportConfigRequest: _TypeAlias = ExportConfigRequest  # noqa: Y015

@@ -79,7 +79,7 @@ class SchemaServiceStub:
     """ListFieldLocks returns all active field locks for a tenant."""
     ExportSchema: _grpc.UnaryUnaryMultiCallable[_schema_service_pb2.ExportSchemaRequest, _schema_service_pb2.ExportSchemaResponse]
     """Import/export.
-    Schemas can be exported as YAML (syntax v1) for backup, review, or version control.
+    Schemas can be exported as YAML (spec_version v1) for backup, review, or version control.
 
     ExportSchema serializes a schema version to YAML.
     """
@@ -140,7 +140,7 @@ class SchemaServiceAsyncStub(SchemaServiceStub):
     """ListFieldLocks returns all active field locks for a tenant."""
     ExportSchema: _aio.UnaryUnaryMultiCallable[_schema_service_pb2.ExportSchemaRequest, _schema_service_pb2.ExportSchemaResponse]  # type: ignore[assignment]
     """Import/export.
-    Schemas can be exported as YAML (syntax v1) for backup, review, or version control.
+    Schemas can be exported as YAML (spec_version v1) for backup, review, or version control.
 
     ExportSchema serializes a schema version to YAML.
     """
@@ -288,7 +288,7 @@ class SchemaServiceServicer(metaclass=_abc_1.ABCMeta):
         context: _ServicerContext,
     ) -> _typing.Union[_schema_service_pb2.ExportSchemaResponse, _abc.Awaitable[_schema_service_pb2.ExportSchemaResponse]]:
         """Import/export.
-        Schemas can be exported as YAML (syntax v1) for backup, review, or version control.
+        Schemas can be exported as YAML (spec_version v1) for backup, review, or version control.
 
         ExportSchema serializes a schema version to YAML.
         """
