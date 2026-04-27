@@ -1,10 +1,14 @@
 """Basic tests to verify the package is importable."""
 
+import re
+from importlib.metadata import version as _pkg_version
+
 import opendecree
 
 
 def test_version():
-    assert opendecree.__version__ == "0.1.0"
+    assert opendecree.__version__ == _pkg_version("opendecree")
+    assert re.match(r"^\d+\.\d+\.\d+([abrc]\d+|\.post\d+|\.dev\d+)?$", opendecree.__version__)
 
 
 def test_supported_server_version():
