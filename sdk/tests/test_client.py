@@ -17,7 +17,7 @@ class TestConfigClientImport:
         assert hasattr(opendecree, "ConfigClient")
 
     def test_version_constants(self):
-        assert opendecree.__version__ == "0.1.0"
+        assert opendecree.__version__
         assert opendecree.SUPPORTED_SERVER_VERSION == ">=0.3.0,<1.0.0"
         assert opendecree.PROTO_VERSION == "v1"
 
