@@ -505,6 +505,8 @@ class Schema(_message.Message):
     FIELDS_FIELD_NUMBER: _builtins.int
     CREATED_AT_FIELD_NUMBER: _builtins.int
     INFO_FIELD_NUMBER: _builtins.int
+    DEPENDENT_REQUIRED_FIELD_NUMBER: _builtins.int
+    VALIDATIONS_FIELD_NUMBER: _builtins.int
     id: _builtins.str
     """Server-assigned unique identifier (UUID)."""
     name: _builtins.str
@@ -540,6 +542,26 @@ class Schema(_message.Message):
     def info(self) -> Global___SchemaInfo:
         """Optional schema metadata: ownership, contact, labels."""
 
+    @_builtins.property
+    def dependent_required(self) -> _containers.RepeatedCompositeFieldContainer[Global___DependentRequiredEntry]:
+        """Cross-field "B required when A present" rules. Each entry declares one
+        trigger field whose presence (non-null value) makes a list of dependent
+        field paths required (also non-null). Equivalent to JSON Schema 2020-12
+        dependentRequired, scoped to schema-level cross-field requirement.
+        Lint-checked at ImportSchema time (every path must reference a real
+        field; trigger may not appear in its own dependents). Enforced at every
+        config write against the post-merge snapshot.
+        """
+
+    @_builtins.property
+    def validations(self) -> _containers.RepeatedCompositeFieldContainer[Global___ValidationRule]:
+        """Cross-field rule expressions reserved for future Common Expression
+        Language (CEL) evaluation. Stored on the schema and round-tripped
+        through ImportSchema/GetSchema; the runtime engine ships separately
+        (see issue #76). Reserving the key in v0.1.0 of the schema spec
+        avoids a breaking meta-schema change later.
+        """
+
     def __init__(
         self,
         *,
@@ -554,16 +576,106 @@ class Schema(_message.Message):
         fields: _abc.Iterable[Global___SchemaField] | None = ...,
         created_at: _timestamp_pb2.Timestamp | None = ...,
         info: Global___SchemaInfo | None = ...,
+        dependent_required: _abc.Iterable[Global___DependentRequiredEntry] | None = ...,
+        validations: _abc.Iterable[Global___ValidationRule] | None = ...,
     ) -> None: ...
     _HasFieldArgType: _TypeAlias = _typing.Literal["_parent_version", b"_parent_version", "created_at", b"created_at", "info", b"info", "parent_version", b"parent_version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_parent_version", b"_parent_version", "checksum", b"checksum", "created_at", b"created_at", "description", b"description", "fields", b"fields", "id", b"id", "info", b"info", "name", b"name", "parent_version", b"parent_version", "published", b"published", "version", b"version", "version_description", b"version_description"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_parent_version", b"_parent_version", "checksum", b"checksum", "created_at", b"created_at", "dependent_required", b"dependent_required", "description", b"description", "fields", b"fields", "id", b"id", "info", b"info", "name", b"name", "parent_version", b"parent_version", "published", b"published", "validations", b"validations", "version", b"version", "version_description", b"version_description"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__parent_version: _TypeAlias = _typing.Literal["parent_version"]  # noqa: Y015
     _WhichOneofArgType__parent_version: _TypeAlias = _typing.Literal["_parent_version", b"_parent_version"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType__parent_version) -> _WhichOneofReturnType__parent_version | None: ...
 
 Global___Schema: _TypeAlias = Schema  # noqa: Y015
+
+@_typing.final
+class DependentRequiredEntry(_message.Message):
+    """DependentRequiredEntry encodes one cross-field requirement: when the
+    trigger field has a non-null value, every dependent field path must also
+    have a non-null value. This is the proto wire form of JSON Schema 2020-12
+    dependentRequired, which uses a `map<path, list<path>>` shape — proto
+    maps cannot hold repeated values directly, so we use a repeated list of
+    entries.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    TRIGGER_FIELD_FIELD_NUMBER: _builtins.int
+    DEPENDENT_FIELDS_FIELD_NUMBER: _builtins.int
+    trigger_field: _builtins.str
+    """Field path whose presence triggers the requirement."""
+    @_builtins.property
+    def dependent_fields(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
+        """Field paths that must be present when the trigger has a non-null value."""
+
+    def __init__(
+        self,
+        *,
+        trigger_field: _builtins.str = ...,
+        dependent_fields: _abc.Iterable[_builtins.str] | None = ...,
+    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["dependent_fields", b"dependent_fields", "trigger_field", b"trigger_field"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+Global___DependentRequiredEntry: _TypeAlias = DependentRequiredEntry  # noqa: Y015
+
+@_typing.final
+class ValidationRule(_message.Message):
+    """ValidationRule encodes one cross-field rule expressed in Common
+    Expression Language (CEL). Reserved in v0.1.0 of the schema spec — the
+    parser accepts and persists rules, but the engine that compiles and
+    evaluates them ships separately (see issue #76 / .agents/context/cel-validation.md).
+
+    Rules are scoped to a path prefix: an empty path means a schema-wide
+    rule; a non-empty path anchors the rule to a group for documentation
+    and UI grouping (the binding namespace itself always exposes every
+    field via `self`, regardless of path).
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    PATH_FIELD_NUMBER: _builtins.int
+    RULE_FIELD_NUMBER: _builtins.int
+    MESSAGE_FIELD_NUMBER: _builtins.int
+    SEVERITY_FIELD_NUMBER: _builtins.int
+    REASON_FIELD_NUMBER: _builtins.int
+    path: _builtins.str
+    """Optional path prefix scoping the rule to a group of fields. Empty
+    string means the rule applies at schema scope.
+    """
+    rule: _builtins.str
+    """The CEL expression source. Lint at ImportSchema in v0.1.0 only checks
+    that the string is non-empty; CEL compilation happens in Phase 2 once
+    the engine ships.
+    """
+    message: _builtins.str
+    """Human-readable failure message shown to clients when the rule
+    rejects a write. Required.
+    """
+    severity: _builtins.str
+    """Optional severity hint. Reserved values: "error" (default — write
+    rejected) and "warning" (write accepted, surfaced for UI). v0.1.0
+    only validates the value is empty or one of the reserved set; the
+    warning path is not yet enforced.
+    """
+    reason: _builtins.str
+    """Optional machine-readable failure code for SDK consumers that want
+    to branch on rule outcome without parsing the message text.
+    """
+    def __init__(
+        self,
+        *,
+        path: _builtins.str = ...,
+        rule: _builtins.str = ...,
+        message: _builtins.str = ...,
+        severity: _builtins.str = ...,
+        reason: _builtins.str = ...,
+    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["message", b"message", "path", b"path", "reason", b"reason", "rule", b"rule", "severity", b"severity"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+
+Global___ValidationRule: _TypeAlias = ValidationRule  # noqa: Y015
 
 @_typing.final
 class Tenant(_message.Message):

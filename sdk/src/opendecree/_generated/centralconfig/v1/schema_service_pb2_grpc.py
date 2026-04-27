@@ -238,7 +238,7 @@ class SchemaServiceServicer(object):
 
     def ExportSchema(self, request, context):
         """Import/export.
-        Schemas can be exported as YAML (syntax v1) for backup, review, or version control.
+        Schemas can be exported as YAML (spec_version v1) for backup, review, or version control.
 
         ExportSchema serializes a schema version to YAML.
         """
