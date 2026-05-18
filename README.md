@@ -6,6 +6,7 @@
 [![Downloads](https://img.shields.io/pypi/dm/opendecree)](https://pypi.org/project/opendecree/)
 [![License](https://img.shields.io/github/license/opendecree/decree-python)](LICENSE)
 [![Project Status: WIP](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+[![codecov](https://codecov.io/gh/opendecree/decree-python/graph/badge.svg)](https://codecov.io/gh/opendecree/decree-python)
 
 Python SDK for [OpenDecree](https://github.com/opendecree/decree) — schema-driven configuration management.
 

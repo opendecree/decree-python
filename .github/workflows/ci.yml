@@ -89,7 +89,15 @@ jobs:
         run: pip install -e "sdk[dev]"
 
       - name: Run tests with coverage
-        run: cd sdk && pytest --cov --cov-report=term-missing
+        run: cd sdk && pytest --cov --cov-report=term-missing --cov-report=xml:coverage.xml
+
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.12'
+        # codecov/codecov-action@v6.0.0
+        uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2
+        with:
+          files: sdk/coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   examples:
     name: Examples
