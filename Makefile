@@ -33,6 +33,8 @@ generate: $(TOOLS_SENTINEL)
 			--mypy_out=$(GEN_DIR) \
 			--mypy_grpc_out=$(GEN_DIR) \
 			$(PROTO_DIR)/centralconfig/v1/*.proto'
+	find $(GEN_DIR) \( -name '*.py' -o -name '*.pyi' \) \
+		-exec sed -i 's/from centralconfig\./from opendecree._generated.centralconfig./g' {} +
 	@echo "Generated stubs in $(GEN_DIR)"
 
 ## lint: Lint with ruff (check + format)

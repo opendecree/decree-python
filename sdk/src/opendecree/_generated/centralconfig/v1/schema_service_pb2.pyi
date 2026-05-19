@@ -3,7 +3,7 @@
 isort:skip_file
 """
 
-from centralconfig.v1 import types_pb2 as _types_pb2
+from opendecree._generated.centralconfig.v1 import types_pb2 as _types_pb2
 from collections import abc as _abc
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
