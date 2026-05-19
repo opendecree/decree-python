@@ -47,6 +47,9 @@ Issues = "https://github.com/opendecree/decree-python/issues"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+opendecree = ["py.typed", "_generated/**/*.pyi"]
+
 [tool.ruff]
 target-version = "py311"
 line-length = 100
