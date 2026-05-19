@@ -6,7 +6,7 @@ import grpc
 import pytest
 
 import opendecree
-from opendecree.errors import NotFoundError, UnavailableError
+from opendecree.errors import DecreeError, NotFoundError, UnavailableError
 from tests.conftest import FakeRpcError
 
 
@@ -187,6 +187,49 @@ class TestConfigClientUnit:
 
         with pytest.raises(UnavailableError):
             client.set_null("t1", "payments.fee")
+
+    def test_set_does_not_retry_on_deadline_exceeded(self):
+        client = self._make_client()
+        err = FakeRpcError(grpc.StatusCode.DEADLINE_EXCEEDED)
+        client._stub.SetField.side_effect = err
+
+        with patch("opendecree._retry.time.sleep"):
+            with pytest.raises(DecreeError):
+                client.set("t1", "payments.fee", "0.5%")
+
+        client._stub.SetField.assert_called_once()
+
+    def test_set_retries_on_deadline_exceeded_with_idempotency_key(self):
+        client = self._make_client()
+        err = FakeRpcError(grpc.StatusCode.DEADLINE_EXCEEDED)
+        client._stub.SetField.side_effect = [err, MagicMock()]
+
+        with patch("opendecree._retry.time.sleep"):
+            client.set("t1", "payments.fee", "0.5%", idempotency_key="idem-1")
+
+        assert client._stub.SetField.call_count == 2
+
+    def test_set_many_does_not_retry_on_deadline_exceeded(self):
+        client = self._make_client()
+        err = FakeRpcError(grpc.StatusCode.DEADLINE_EXCEEDED)
+        client._stub.SetFields.side_effect = err
+
+        with patch("opendecree._retry.time.sleep"):
+            with pytest.raises(DecreeError):
+                client.set_many("t1", {"a": "1"})
+
+        client._stub.SetFields.assert_called_once()
+
+    def test_set_null_does_not_retry_on_deadline_exceeded(self):
+        client = self._make_client()
+        err = FakeRpcError(grpc.StatusCode.DEADLINE_EXCEEDED)
+        client._stub.SetField.side_effect = err
+
+        with patch("opendecree._retry.time.sleep"):
+            with pytest.raises(DecreeError):
+                client.set_null("t1", "payments.fee")
+
+        client._stub.SetField.assert_called_once()
 
     def test_no_interceptor_when_no_metadata(self):
         """Client with no subject/token/role skips interceptor (line 69)."""

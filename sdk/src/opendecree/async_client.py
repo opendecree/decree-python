@@ -19,7 +19,7 @@ import grpc.aio
 from opendecree._channel import create_aio_channel
 from opendecree._compat import async_fetch_server_version, check_version_compatible
 from opendecree._interceptors import _build_metadata
-from opendecree._retry import RetryConfig, async_with_retry
+from opendecree._retry import RetryConfig, async_with_retry, write_safe_config
 from opendecree._stubs import (
     ensure_stubs,
     make_string_typed_value,
@@ -227,7 +227,14 @@ class AsyncConfigClient:
         except grpc.aio.AioRpcError as e:
             raise map_grpc_error(e) from e
 
-    async def set(self, tenant_id: str, field_path: str, value: str) -> None:
+    async def set(
+        self,
+        tenant_id: str,
+        field_path: str,
+        value: str,
+        *,
+        idempotency_key: str | None = None,
+    ) -> None:
         """Set a config value.
 
         The value is sent as a string — the server coerces it to the
@@ -237,12 +244,19 @@ class AsyncConfigClient:
             tenant_id: Tenant UUID.
             field_path: Dot-separated field path (e.g., ``"payments.fee"``).
             value: The value as a string.
+            idempotency_key: When provided, the request is retried on
+                ``DEADLINE_EXCEEDED`` in addition to ``UNAVAILABLE``. Use only
+                when the write is safe to apply more than once (e.g., the value
+                is a known constant and a duplicate apply is harmless). Without
+                this key, writes are only retried on ``UNAVAILABLE`` to avoid
+                double-applying after a server-side timeout.
 
         Raises:
             NotFoundError: If the field does not exist in the schema.
             LockedError: If the field is locked.
             InvalidArgumentError: If the value fails validation.
         """
+        retry_cfg = self._retry if idempotency_key is not None else write_safe_config(self._retry)
 
         async def _call() -> None:
             await self._stub.SetField(
@@ -256,7 +270,7 @@ class AsyncConfigClient:
             )
 
         try:
-            await async_with_retry(self._retry, _call)
+            await async_with_retry(retry_cfg, _call)
         except grpc.aio.AioRpcError as e:
             raise map_grpc_error(e) from e
 
@@ -266,6 +280,7 @@ class AsyncConfigClient:
         values: dict[str, str],
         *,
         description: str = "",
+        idempotency_key: str | None = None,
     ) -> None:
         """Atomically set multiple config values.
 
@@ -273,12 +288,16 @@ class AsyncConfigClient:
             tenant_id: Tenant UUID.
             values: Dict mapping field paths to string values.
             description: Optional description for the audit log.
+            idempotency_key: When provided, the request is retried on
+                ``DEADLINE_EXCEEDED`` in addition to ``UNAVAILABLE``. See
+                ``set()`` for details on retry semantics.
 
         Raises:
             NotFoundError: If a field does not exist in the schema.
             LockedError: If any field is locked.
             InvalidArgumentError: If any value fails validation.
         """
+        retry_cfg = self._retry if idempotency_key is not None else write_safe_config(self._retry)
 
         async def _call() -> None:
             updates = [
@@ -299,21 +318,31 @@ class AsyncConfigClient:
             )
 
         try:
-            await async_with_retry(self._retry, _call)
+            await async_with_retry(retry_cfg, _call)
         except grpc.aio.AioRpcError as e:
             raise map_grpc_error(e) from e
 
-    async def set_null(self, tenant_id: str, field_path: str) -> None:
+    async def set_null(
+        self,
+        tenant_id: str,
+        field_path: str,
+        *,
+        idempotency_key: str | None = None,
+    ) -> None:
         """Set a config field to null.
 
         Args:
             tenant_id: Tenant UUID.
             field_path: Dot-separated field path.
+            idempotency_key: When provided, the request is retried on
+                ``DEADLINE_EXCEEDED`` in addition to ``UNAVAILABLE``. See
+                ``set()`` for details on retry semantics.
 
         Raises:
             NotFoundError: If the field does not exist in the schema.
             LockedError: If the field is locked.
         """
+        retry_cfg = self._retry if idempotency_key is not None else write_safe_config(self._retry)
 
         async def _call() -> None:
             await self._stub.SetField(
@@ -327,7 +356,7 @@ class AsyncConfigClient:
             )
 
         try:
-            await async_with_retry(self._retry, _call)
+            await async_with_retry(retry_cfg, _call)
         except grpc.aio.AioRpcError as e:
             raise map_grpc_error(e) from e
 

@@ -42,6 +42,27 @@ class RetryConfig:
     )
 
 
+def write_safe_config(base: RetryConfig | None) -> RetryConfig | None:
+    """Return a retry config safe for non-idempotent writes.
+
+    Strips DEADLINE_EXCEEDED from retryable codes — a timeout does not guarantee
+    the server hasn't already applied the write, so retrying risks double-apply.
+    Returns None when base is None (retry disabled).
+    """
+    if base is None:
+        return None
+    safe_codes = tuple(c for c in base.retryable_codes if c != grpc.StatusCode.DEADLINE_EXCEEDED)
+    if not safe_codes:
+        return None
+    return RetryConfig(
+        max_attempts=base.max_attempts,
+        initial_backoff=base.initial_backoff,
+        max_backoff=base.max_backoff,
+        multiplier=base.multiplier,
+        retryable_codes=safe_codes,
+    )
+
+
 def with_retry(config: RetryConfig | None, fn: Callable[[], T]) -> T:
     """Execute fn with retry on transient gRPC errors (sync)."""
     if config is None:
