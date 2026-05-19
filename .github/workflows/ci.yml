@@ -127,10 +127,45 @@ jobs:
           python -m py_compile examples/error-handling/main.py
           python -m py_compile examples/setup.py
 
+  wheel-check:
+    name: Wheel contents
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Build wheel
+        run: |
+          pip install build
+          python -m build sdk/ --wheel --outdir /tmp/dist
+
+      - name: Assert py.typed present
+        run: |
+          pip install zipfile36
+          python - <<'EOF'
+          import zipfile, glob, sys
+          wheels = glob.glob("/tmp/dist/*.whl")
+          assert wheels, "no wheel found"
+          with zipfile.ZipFile(wheels[0]) as whl:
+              names = whl.namelist()
+          found = [n for n in names if n.endswith("py.typed")]
+          if not found:
+              print("FAIL: py.typed missing from wheel"); print("\n".join(names)); sys.exit(1)
+          print(f"OK: {found[0]}")
+          EOF
+
   check:
     name: CI check
     if: always()
-    needs: [lint, typecheck, test, examples]
+    needs: [lint, typecheck, test, examples, wheel-check]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

@@ -68,6 +68,10 @@ async with AsyncConfigClient("localhost:9090", subject="myapp") as client:
 
 For detailed concepts (schemas, typed values, versioning, auth), see the [main OpenDecree docs](https://github.com/opendecree/decree).
 
+## Typing
+
+This package is fully typed. It ships a `py.typed` marker and `.pyi` stub files for the generated gRPC layer, so mypy, pyright, and similar tools work without additional configuration.
+
 ## Requirements
 
 - Python 3.11+
