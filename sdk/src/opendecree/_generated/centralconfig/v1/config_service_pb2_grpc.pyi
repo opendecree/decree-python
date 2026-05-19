@@ -3,7 +3,7 @@
 isort:skip_file
 """
 
-from centralconfig.v1 import config_service_pb2 as _config_service_pb2
+from opendecree._generated.centralconfig.v1 import config_service_pb2 as _config_service_pb2
 from collections import abc as _abc
 from grpc import aio as _aio
 import abc as _abc_1

@@ -22,7 +22,7 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
-from centralconfig.v1 import types_pb2 as centralconfig_dot_v1_dot_types__pb2
+from opendecree._generated.centralconfig.v1 import types_pb2 as centralconfig_dot_v1_dot_types__pb2
 from google.api import annotations_pb2 as google_dot_api_dot_annotations__pb2
 from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2
 
