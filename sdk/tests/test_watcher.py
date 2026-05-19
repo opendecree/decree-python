@@ -264,3 +264,41 @@ class TestConfigWatcher:
 
         # Thread should have exited on its own due to non-retryable error.
         assert w._thread is None
+
+    def test_stop_cancels_stream_and_joins_thread(self):
+        """stop() cancels the gRPC stream so the background thread exits cleanly."""
+        import threading
+
+        w = self._make_watcher()
+        w.field("fee", float, default=0.0)
+
+        # A blocking iterator that only unblocks when cancel() is called.
+        cancelled = threading.Event()
+
+        class _BlockingIter:
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                # Block until cancelled.
+                cancelled.wait(timeout=10.0)
+                raise StopIteration
+
+            def cancel(self):
+                cancelled.set()
+
+        blocking_stream = _BlockingIter()
+        w._stub.Subscribe.return_value = blocking_stream
+
+        w.start()
+        time.sleep(0.1)  # let the thread reach the blocking iterator
+
+        thread_ref = w._thread
+        assert thread_ref is not None
+        assert thread_ref.is_alive()
+
+        w.stop()
+
+        # Thread must have joined within the timeout.
+        assert not thread_ref.is_alive()
+        assert w._thread is None
