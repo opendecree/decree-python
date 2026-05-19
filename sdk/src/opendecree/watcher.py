@@ -148,6 +148,7 @@ class ConfigWatcher:
         self._timeout = timeout
         self._fields: dict[str, WatchedField] = {}  # type: ignore[type-arg]
         self._thread: threading.Thread | None = None
+        self._stream: grpc.Future | None = None
         self._stop_event = threading.Event()
 
     def field(self, path: str, type_: type[T], *, default: T) -> WatchedField[T]:
@@ -184,6 +185,8 @@ class ConfigWatcher:
     def stop(self) -> None:
         """Stop watching and clean up the background thread."""
         self._stop_event.set()
+        if self._stream is not None:
+            self._stream.cancel()
         if self._thread is not None:
             self._thread.join(timeout=5.0)
             self._thread = None
@@ -215,7 +218,7 @@ class ConfigWatcher:
 
         while not self._stop_event.is_set():
             try:
-                stream = self._stub.Subscribe(
+                self._stream = self._stub.Subscribe(
                     self._pb2.SubscribeRequest(
                         tenant_id=self._tenant_id,
                         field_paths=field_paths,
@@ -223,10 +226,12 @@ class ConfigWatcher:
                 )
                 backoff = _RECONNECT_INITIAL  # reset on successful connect
 
-                for response in stream:
+                for response in self._stream:
                     if self._stop_event.is_set():
                         return
                     self._process_change(response.change)
+
+                self._stream = None
 
             except grpc.RpcError as e:
                 if self._stop_event.is_set():
