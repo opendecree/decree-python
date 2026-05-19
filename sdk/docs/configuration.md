@@ -117,7 +117,34 @@ client = ConfigClient(
 client = ConfigClient("localhost:9090", retry=None)
 ```
 
-Default: 3 attempts, 0.1s initial backoff, 5s max, 2x multiplier. Only `UNAVAILABLE` and `DEADLINE_EXCEEDED` are retried.
+Default: 3 attempts, 0.1s initial backoff, 5s max, 2x multiplier.
+
+### Read vs. write retry semantics
+
+**Reads** (`get`, `get_all`) retry on both `UNAVAILABLE` and `DEADLINE_EXCEEDED` — reads are
+idempotent so a duplicate is always safe.
+
+**Writes** (`set`, `set_many`, `set_null`) retry only on `UNAVAILABLE` by default.
+`DEADLINE_EXCEEDED` is excluded because the server may have already applied the write before the
+client timed out — retrying without coordination would double-apply the change (duplicate audit
+log entry, version bump).
+
+To opt a write into `DEADLINE_EXCEEDED` retry, pass an `idempotency_key`:
+
+```python
+import uuid
+
+# Only use this when a duplicate apply is harmless for your use case.
+client.set(
+    "tenant-id",
+    "feature_flags.dark_mode",
+    "true",
+    idempotency_key=str(uuid.uuid4()),  # unique per request
+)
+```
+
+Use `idempotency_key` only when the write is genuinely safe to apply more than once — for example,
+setting a field to a known constant value.
 
 ## Timeouts
 

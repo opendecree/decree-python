@@ -6,7 +6,7 @@ import grpc
 import grpc.aio
 import pytest
 
-from opendecree._retry import RetryConfig, async_with_retry, with_retry
+from opendecree._retry import RetryConfig, async_with_retry, with_retry, write_safe_config
 from tests.conftest import FakeRpcError
 
 
@@ -64,6 +64,27 @@ def test_retry_config_defaults():
     assert cfg.multiplier == 2.0
     assert grpc.StatusCode.UNAVAILABLE in cfg.retryable_codes
     assert grpc.StatusCode.DEADLINE_EXCEEDED in cfg.retryable_codes
+
+
+def test_write_safe_config_strips_deadline_exceeded():
+    base = RetryConfig()
+    safe = write_safe_config(base)
+    assert safe is not None
+    assert grpc.StatusCode.UNAVAILABLE in safe.retryable_codes
+    assert grpc.StatusCode.DEADLINE_EXCEEDED not in safe.retryable_codes
+    assert safe.max_attempts == base.max_attempts
+    assert safe.initial_backoff == base.initial_backoff
+    assert safe.max_backoff == base.max_backoff
+    assert safe.multiplier == base.multiplier
+
+
+def test_write_safe_config_none_passthrough():
+    assert write_safe_config(None) is None
+
+
+def test_write_safe_config_all_codes_removed_returns_none():
+    cfg = RetryConfig(retryable_codes=(grpc.StatusCode.DEADLINE_EXCEEDED,))
+    assert write_safe_config(cfg) is None
 
 
 # --- Async retry ---
