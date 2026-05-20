@@ -265,6 +265,64 @@ class TestConfigWatcher:
         # Thread should have exited on its own due to non-retryable error.
         assert w._thread is None
 
+    def test_reconnects_after_clean_stream_close(self):
+        """Clean server-side stream close triggers a reconnect."""
+        import unittest.mock as mock
+
+        w = self._make_watcher()
+        w.field("fee", float, default=0.0)
+
+        call_count = 0
+
+        def _subscribe_side_effect(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                return iter([])  # clean close — server FIN
+            # Stop after the second call so the thread exits.
+            w._stop_event.set()
+            return iter([])
+
+        w._stub.Subscribe.side_effect = _subscribe_side_effect
+
+        with mock.patch("opendecree.watcher._RECONNECT_INITIAL", 0.2):
+            w.start()
+            time.sleep(1.0)
+            w.stop()
+
+        assert call_count >= 2
+
+    def test_clean_close_applies_backoff(self):
+        """Reconnect after a clean close is delayed, not immediate."""
+        import unittest.mock as mock
+
+        w = self._make_watcher()
+        w.field("fee", float, default=0.0)
+
+        call_count = 0
+        timestamps: list[float] = []
+
+        def _subscribe_side_effect(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            timestamps.append(time.monotonic())
+            if call_count == 1:
+                return iter([])  # clean close
+            w._stop_event.set()
+            return iter([])
+
+        w._stub.Subscribe.side_effect = _subscribe_side_effect
+
+        with mock.patch("opendecree.watcher._RECONNECT_INITIAL", 0.2):
+            w.start()
+            time.sleep(1.0)
+            w.stop()
+
+        assert len(timestamps) >= 2
+        gap = timestamps[1] - timestamps[0]
+        # Minimum gap is jitter_min (0.5) * RECONNECT_INITIAL (0.2) = 0.1s.
+        assert gap >= 0.05
+
     def test_stop_cancels_stream_and_joins_thread(self):
         """stop() cancels the gRPC stream so the background thread exits cleanly."""
         import threading

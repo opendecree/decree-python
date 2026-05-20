@@ -233,6 +233,16 @@ class ConfigWatcher:
 
                 self._stream = None
 
+                # Stream ended normally (server closed) — reconnect with backoff.
+                if not self._stop_event.is_set():
+                    jitter = random.uniform(0.5, 1.5)
+                    sleep_time = backoff * jitter
+                    logger.warning("Stream closed by server, reconnecting in %.1fs", sleep_time)
+                    deadline = time.monotonic() + sleep_time
+                    while time.monotonic() < deadline and not self._stop_event.is_set():
+                        time.sleep(0.1)
+                    backoff = min(backoff * _RECONNECT_MULTIPLIER, _RECONNECT_MAX)
+
             except grpc.RpcError as e:
                 if self._stop_event.is_set():
                     return
