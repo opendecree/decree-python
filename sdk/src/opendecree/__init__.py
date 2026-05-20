@@ -14,6 +14,7 @@ from opendecree.async_watcher import AsyncConfigWatcher, AsyncWatchedField
 from opendecree.client import ConfigClient
 from opendecree.errors import (
     AlreadyExistsError,
+    CancelledError,
     ChecksumMismatchError,
     DecreeError,
     IncompatibleServerError,
@@ -21,7 +22,10 @@ from opendecree.errors import (
     LockedError,
     NotFoundError,
     PermissionDeniedError,
+    ResourceExhaustedError,
+    TimeoutError,
     TypeMismatchError,
+    UnimplementedError,
     UnavailableError,
 )
 from opendecree.types import Change, ConfigValue, FieldUpdate, ServerVersion
@@ -35,6 +39,7 @@ __all__ = [
     "AsyncConfigClient",
     "AsyncConfigWatcher",
     "AsyncWatchedField",
+    "CancelledError",
     "Change",
     "ChecksumMismatchError",
     "ConfigClient",
@@ -47,9 +52,12 @@ __all__ = [
     "LockedError",
     "NotFoundError",
     "PermissionDeniedError",
+    "ResourceExhaustedError",
     "RetryConfig",
     "ServerVersion",
+    "TimeoutError",
     "TypeMismatchError",
+    "UnimplementedError",
     "UnavailableError",
     "WatchedField",
     "__version__",

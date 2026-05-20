@@ -13,7 +13,12 @@ class FakeRpcError(grpc.aio.AioRpcError):
     sync and async error handling.
     """
 
-    def __init__(self, code: grpc.StatusCode, details: str = "test") -> None:
+    def __init__(
+        self,
+        code: grpc.StatusCode,
+        details: str = "test",
+        trailing_metadata: grpc.aio.Metadata | None = None,
+    ) -> None:
         # AioRpcError.__init__ expects (code, initial_metadata, trailing_metadata,
         # details, debug_error_string).
-        super().__init__(code, None, None, details, None)  # type: ignore[arg-type]
+        super().__init__(code, None, trailing_metadata, details, None)  # type: ignore[arg-type]
