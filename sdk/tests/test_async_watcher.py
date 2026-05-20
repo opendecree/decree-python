@@ -270,3 +270,35 @@ class TestAsyncConfigWatcher:
         assert w._task is not None
         assert w._task.done()
         await w.stop()
+
+    @pytest.mark.asyncio
+    async def test_auth_metadata_forwarded(self):
+        """metadata= is passed to both GetConfig and Subscribe."""
+        stub = MagicMock()
+        pb2 = MagicMock()
+
+        mock_resp = MagicMock()
+        mock_resp.config.values = []
+        stub.GetConfig = AsyncMock(return_value=mock_resp)
+
+        auth_meta = [("x-subject", "svc"), ("x-role", "superadmin")]
+        w = AsyncConfigWatcher(stub, pb2, "t1", timeout=5.0, metadata=auth_meta)
+        w.field("fee", float, default=0.0)
+
+        async def empty_stream():
+            return
+            yield
+
+        stub.Subscribe.return_value = empty_stream()
+
+        await w.start()
+        await asyncio.sleep(0.05)
+        await w.stop()
+
+        stub.GetConfig.assert_awaited_once()
+        _, get_kwargs = stub.GetConfig.call_args
+        assert get_kwargs.get("metadata") == auth_meta
+
+        stub.Subscribe.assert_called_once()
+        _, sub_kwargs = stub.Subscribe.call_args
+        assert sub_kwargs.get("metadata") == auth_meta

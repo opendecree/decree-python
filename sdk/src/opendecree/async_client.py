@@ -373,4 +373,4 @@ class AsyncConfigClient:
         """
         from opendecree.async_watcher import AsyncConfigWatcher
 
-        return AsyncConfigWatcher(self._stub, self._pb2, tenant_id, self._timeout)
+        return AsyncConfigWatcher(self._stub, self._pb2, tenant_id, self._timeout, self._metadata())

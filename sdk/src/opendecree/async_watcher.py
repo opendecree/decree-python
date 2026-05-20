@@ -129,11 +129,19 @@ class AsyncConfigWatcher:
     auto-starts on enter, auto-stops on exit.
     """
 
-    def __init__(self, stub: Any, pb2: Any, tenant_id: str, timeout: float) -> None:
+    def __init__(
+        self,
+        stub: Any,
+        pb2: Any,
+        tenant_id: str,
+        timeout: float,
+        metadata: list[tuple[str, str]] | None = None,
+    ) -> None:
         self._stub = stub
         self._pb2 = pb2
         self._tenant_id = tenant_id
         self._timeout = timeout
+        self._metadata: list[tuple[str, str]] = metadata or []
         self._fields: dict[str, AsyncWatchedField] = {}  # type: ignore[type-arg]
         self._task: asyncio.Task | None = None  # type: ignore[type-arg]
         self._stopped = False
@@ -193,6 +201,7 @@ class AsyncConfigWatcher:
         resp = await self._stub.GetConfig(
             self._pb2.GetConfigRequest(tenant_id=self._tenant_id),
             timeout=self._timeout,
+            metadata=self._metadata,
         )
         all_values = process_get_all_response(resp)
         for path, watched in self._fields.items():
@@ -211,6 +220,7 @@ class AsyncConfigWatcher:
                         tenant_id=self._tenant_id,
                         field_paths=field_paths,
                     ),
+                    metadata=self._metadata,
                 )
                 backoff = _RECONNECT_INITIAL
 
