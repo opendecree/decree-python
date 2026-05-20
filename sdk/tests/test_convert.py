@@ -1,6 +1,6 @@
 """Tests for type conversion."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -84,7 +84,7 @@ def test_convert_unsupported_type():
 def test_convert_datetime_utc():
     result = convert_value("2023-11-14T22:13:20Z", datetime)
     assert isinstance(result, datetime)
-    assert result == datetime(2023, 11, 14, 22, 13, 20, tzinfo=timezone.utc)
+    assert result == datetime(2023, 11, 14, 22, 13, 20, tzinfo=UTC)
 
 
 def test_convert_datetime_with_offset():

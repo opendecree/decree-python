@@ -7,6 +7,7 @@ __version__ = _pkg_version("opendecree")
 SUPPORTED_SERVER_VERSION = ">=0.3.0,<1.0.0"
 PROTO_VERSION = "v1"
 
+from opendecree._convert import URL
 from opendecree._retry import RetryConfig
 from opendecree.async_client import AsyncConfigClient
 from opendecree.async_watcher import AsyncConfigWatcher, AsyncWatchedField
@@ -23,13 +24,13 @@ from opendecree.errors import (
     TypeMismatchError,
     UnavailableError,
 )
-from opendecree._convert import URL
 from opendecree.types import Change, ConfigValue, FieldUpdate, ServerVersion
 from opendecree.watcher import ConfigWatcher, WatchedField
 
 __all__ = [
     "PROTO_VERSION",
     "SUPPORTED_SERVER_VERSION",
+    "URL",
     "AlreadyExistsError",
     "AsyncConfigClient",
     "AsyncConfigWatcher",
@@ -49,7 +50,6 @@ __all__ = [
     "RetryConfig",
     "ServerVersion",
     "TypeMismatchError",
-    "URL",
     "UnavailableError",
     "WatchedField",
     "__version__",
