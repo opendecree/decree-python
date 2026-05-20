@@ -237,9 +237,7 @@ class ConfigWatcher:
                 if not self._stop_event.is_set():
                     jitter = random.uniform(0.5, 1.5)
                     sleep_time = backoff * jitter
-                    logger.warning(
-                        "Stream closed by server, reconnecting in %.1fs", sleep_time
-                    )
+                    logger.warning("Stream closed by server, reconnecting in %.1fs", sleep_time)
                     deadline = time.monotonic() + sleep_time
                     while time.monotonic() < deadline and not self._stop_event.is_set():
                         time.sleep(0.1)
