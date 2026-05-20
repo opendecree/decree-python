@@ -8,6 +8,9 @@ The SDK provides async equivalents for all sync APIs, built on `grpc.aio`.
 from opendecree import AsyncConfigClient
 
 async with AsyncConfigClient("localhost:9090", subject="myapp") as client:
+    # Server version
+    version = await client.get_server_version()
+
     # Typed gets (same overload pattern as sync)
     fee = await client.get("tenant-id", "payments.fee")              # → str
     retries = await client.get("tenant-id", "payments.retries", int) # → int

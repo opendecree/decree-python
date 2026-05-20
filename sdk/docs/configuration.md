@@ -156,6 +156,28 @@ client = ConfigClient("localhost:9090", timeout=30.0)
 
 Default: 10 seconds.
 
+## Server version
+
+Fetch the server version explicitly with `get_server_version()`. The value is cached after the
+first call.
+
+```python
+with ConfigClient("localhost:9090", subject="myapp") as client:
+    version = client.get_server_version()
+    print(version.version)
+```
+
+For async clients, await the same method:
+
+```python
+async with AsyncConfigClient("localhost:9090", subject="myapp") as client:
+    version = await client.get_server_version()
+    print(version.version)
+```
+
+The sync-only `server_version` property is deprecated for one release. Use
+`get_server_version()` for both sync and async clients.
+
 ## Error types
 
 All exceptions inherit from `DecreeError`:

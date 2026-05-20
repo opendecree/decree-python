@@ -20,6 +20,9 @@ def main() -> None:
 
     # Context manager closes the gRPC channel automatically.
     with ConfigClient("localhost:9090", subject="quickstart-example") as client:
+        server_version = client.get_server_version()
+        print(f"server.version:    {server_version.version}")
+
         # get() returns str by default.
         name = client.get(tenant_id, "app.name")
         print(f"app.name:          {name}")

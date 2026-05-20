@@ -11,6 +11,7 @@ All writes send string values — the server coerces to the schema-defined type.
 
 from __future__ import annotations
 
+import warnings
 from datetime import timedelta
 from typing import TYPE_CHECKING, overload
 
@@ -108,9 +109,8 @@ class ConfigClient:
     def __exit__(self, *exc: object) -> None:
         self.close()
 
-    @property
-    def server_version(self) -> ServerVersion:
-        """The server's version, fetched once and cached.
+    def get_server_version(self) -> ServerVersion:
+        """Fetch the server's version, cached after first call.
 
         Returns:
             ServerVersion with version and commit strings.
@@ -124,6 +124,20 @@ class ConfigClient:
             )
         return self._server_version
 
+    @property
+    def server_version(self) -> ServerVersion:
+        """The server's version, fetched once and cached.
+
+        Deprecated:
+            Use ``get_server_version()`` instead.
+        """
+        warnings.warn(
+            "ConfigClient.server_version is deprecated; use get_server_version() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.get_server_version()
+
     def check_compatibility(self) -> None:
         """Check that the server version is compatible with this SDK.
 
@@ -135,7 +149,7 @@ class ConfigClient:
                 supported range.
             UnavailableError: If the server is unreachable.
         """
-        check_version_compatible(self.server_version.version)
+        check_version_compatible(self.get_server_version().version)
 
     # --- get() with @overload for type safety ---
 
