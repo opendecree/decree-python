@@ -45,6 +45,24 @@ class Change:
 
 
 @dataclass(frozen=True, slots=True)
+class FieldUpdate:
+    """A single field update for use with :meth:`ConfigClient.set_many`.
+
+    Attributes:
+        field_path: Dot-separated field path (e.g., ``"payments.fee"``).
+        value: The value as a string.
+        expected_checksum: When set, the server rejects the write if the
+            current value's checksum does not match (optimistic concurrency).
+        value_description: Optional description stored with this specific value.
+    """
+
+    field_path: str
+    value: str
+    expected_checksum: str | None = None
+    value_description: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class ServerVersion:
     """Server version information from the ServerService.
 
