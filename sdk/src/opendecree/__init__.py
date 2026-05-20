@@ -23,6 +23,7 @@ from opendecree.errors import (
     TypeMismatchError,
     UnavailableError,
 )
+from opendecree._convert import URL
 from opendecree.types import Change, ConfigValue, FieldUpdate, ServerVersion
 from opendecree.watcher import ConfigWatcher, WatchedField
 
@@ -48,6 +49,7 @@ __all__ = [
     "RetryConfig",
     "ServerVersion",
     "TypeMismatchError",
+    "URL",
     "UnavailableError",
     "WatchedField",
     "__version__",
