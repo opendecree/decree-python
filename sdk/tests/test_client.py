@@ -1,5 +1,6 @@
 """Tests for the sync ConfigClient."""
 
+import warnings
 from unittest.mock import MagicMock, patch
 
 import grpc
@@ -9,6 +10,55 @@ import opendecree
 from opendecree.errors import DecreeError, NotFoundError, UnavailableError
 from opendecree.types import FieldUpdate
 from tests.conftest import FakeRpcError
+
+
+def _make_patched_client(**kwargs):
+    """Create a ConfigClient with mocked channel and interceptors."""
+    with patch("opendecree.client.create_channel") as mock_ch:
+        mock_channel = MagicMock()
+        mock_ch.return_value = mock_channel
+        with patch("opendecree.client.grpc.intercept_channel") as mock_intercept:
+            mock_intercept.return_value = mock_channel
+            return opendecree.ConfigClient("localhost:9090", **kwargs)
+
+
+class TestConfigClientTokenWarning:
+    def test_warns_on_insecure_with_token(self):
+        with pytest.warns(UserWarning, match="insecure channel"):
+            _make_patched_client(token="secret", insecure=True)
+
+    def test_no_warning_on_tls_with_token(self):
+        creds = MagicMock(spec=grpc.ChannelCredentials)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)
+            _make_patched_client(token="secret", credentials=creds)
+
+    def test_no_warning_on_insecure_without_token(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)
+            _make_patched_client(insecure=True)
+
+    def test_tls_token_not_in_metadata(self):
+        creds = MagicMock(spec=grpc.ChannelCredentials)
+        with patch("opendecree.client.create_channel") as mock_ch:
+            mock_ch.return_value = MagicMock()
+            with patch("opendecree.client.grpc.intercept_channel"):
+                client = opendecree.ConfigClient(
+                    "localhost:9090", token="secret", credentials=creds
+                )
+        # No interceptor metadata should contain the raw authorization header.
+        assert client._raw_channel is mock_ch.return_value
+        # Token routed to channel factory, not raw header interceptor.
+        assert mock_ch.call_args.kwargs.get("token") == "secret"
+
+    def test_insecure_token_in_metadata_not_channel(self):
+        with pytest.warns(UserWarning):
+            with patch("opendecree.client.create_channel") as mock_ch:
+                mock_ch.return_value = MagicMock()
+                with patch("opendecree.client.grpc.intercept_channel"):
+                    opendecree.ConfigClient("localhost:9090", token="secret", insecure=True)
+        # Token should NOT be forwarded to channel factory on insecure path.
+        assert mock_ch.call_args.kwargs.get("token") is None
 
 
 class TestConfigClientImport:

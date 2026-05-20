@@ -65,7 +65,12 @@ class ConfigClient:
             role: Role for ``x-role`` metadata header. Defaults to ``"superadmin"``.
             tenant_id: Default tenant for ``x-tenant-id`` metadata header.
             token: Bearer token. When set, metadata headers are not sent.
+                On a TLS channel the token is embedded via
+                ``composite_channel_credentials`` and protected by the TLS
+                layer. On an insecure channel it travels in cleartext and a
+                ``UserWarning`` is raised — prefer TLS in production.
             insecure: Use plaintext (no TLS). Defaults to True for local dev.
+                Do not combine with *token* in production.
             credentials: TLS channel credentials. Overrides *insecure*.
             timeout: Default per-RPC timeout in seconds. Defaults to 10.
             retry: Retry configuration. Defaults to ``RetryConfig()``.
@@ -74,12 +79,30 @@ class ConfigClient:
         self._timeout = timeout
         self._retry = retry if retry is not None else RetryConfig()
 
-        metadata = _build_metadata(subject=subject, role=role, tenant_id=tenant_id, token=token)
+        tls_active = credentials is not None or not insecure
+        if token and not tls_active:
+            warnings.warn(
+                "Bearer token sent over insecure channel without TLS — "
+                "the token will be transmitted in cleartext. "
+                "Set insecure=False or provide credentials in production.",
+                UserWarning,
+                stacklevel=2,
+            )
+
+        # On a TLS channel, embed the token via composite_channel_credentials
+        # (protected by TLS). On an insecure channel, fall back to raw header.
+        channel_token = token if tls_active else None
+        metadata_token = token if not tls_active else None
+        metadata = _build_metadata(
+            subject=subject, role=role, tenant_id=tenant_id, token=metadata_token
+        )
         interceptors: list[grpc.UnaryUnaryClientInterceptor] = []
         if metadata:
             interceptors.append(AuthInterceptor(metadata))
 
-        channel = create_channel(target, insecure=insecure, credentials=credentials)
+        channel = create_channel(
+            target, insecure=insecure, credentials=credentials, token=channel_token
+        )
         if interceptors:
             self._channel = grpc.intercept_channel(channel, *interceptors)
         else:

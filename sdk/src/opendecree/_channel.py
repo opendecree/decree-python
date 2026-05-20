@@ -14,18 +14,43 @@ _DEFAULT_OPTIONS: list[tuple[str, int]] = [
 ]
 
 
+def _token_call_credentials(token: str) -> grpc.CallCredentials:
+    """Return gRPC call credentials that inject a Bearer token."""
+
+    def _callback(context: object, callback: object) -> None:  # type: ignore[type-arg]
+        assert callable(callback)
+        callback([("authorization", f"Bearer {token}")], None)
+
+    return grpc.metadata_call_credentials(_callback)
+
+
 def create_channel(
     target: str,
     *,
     insecure: bool = True,
     credentials: grpc.ChannelCredentials | None = None,
+    token: str | None = None,
 ) -> grpc.Channel:
-    """Create a gRPC channel with sensible defaults."""
-    if credentials is not None:
-        return grpc.secure_channel(target, credentials, options=_DEFAULT_OPTIONS)
-    if insecure:
-        return grpc.insecure_channel(target, options=_DEFAULT_OPTIONS)
-    return grpc.secure_channel(target, grpc.ssl_channel_credentials(), options=_DEFAULT_OPTIONS)
+    """Create a gRPC channel with sensible defaults.
+
+    When *token* is provided and TLS is active (``insecure=False`` or
+    *credentials* is given), the token is embedded via
+    ``composite_channel_credentials`` so it is protected by the TLS layer.
+    On an insecure channel the token is sent as a raw header — callers should
+    warn the user before allowing this.
+    """
+    channel_creds: grpc.ChannelCredentials | None = credentials
+    if channel_creds is None and not insecure:
+        channel_creds = grpc.ssl_channel_credentials()
+
+    if channel_creds is not None:
+        if token:
+            channel_creds = grpc.composite_channel_credentials(
+                channel_creds, _token_call_credentials(token)
+            )
+        return grpc.secure_channel(target, channel_creds, options=_DEFAULT_OPTIONS)
+
+    return grpc.insecure_channel(target, options=_DEFAULT_OPTIONS)
 
 
 def create_aio_channel(
@@ -33,10 +58,25 @@ def create_aio_channel(
     *,
     insecure: bool = True,
     credentials: grpc.ChannelCredentials | None = None,
+    token: str | None = None,
 ) -> grpc.aio.Channel:
-    """Create an async gRPC channel with sensible defaults."""
-    if credentials is not None:
-        return grpc.aio.secure_channel(target, credentials, options=_DEFAULT_OPTIONS)
-    if insecure:
-        return grpc.aio.insecure_channel(target, options=_DEFAULT_OPTIONS)
-    return grpc.aio.secure_channel(target, grpc.ssl_channel_credentials(), options=_DEFAULT_OPTIONS)
+    """Create an async gRPC channel with sensible defaults.
+
+    When *token* is provided and TLS is active (``insecure=False`` or
+    *credentials* is given), the token is embedded via
+    ``composite_channel_credentials`` so it is protected by the TLS layer.
+    On an insecure channel the token is sent as a raw header — callers should
+    warn the user before allowing this.
+    """
+    channel_creds: grpc.ChannelCredentials | None = credentials
+    if channel_creds is None and not insecure:
+        channel_creds = grpc.ssl_channel_credentials()
+
+    if channel_creds is not None:
+        if token:
+            channel_creds = grpc.composite_channel_credentials(
+                channel_creds, _token_call_credentials(token)
+            )
+        return grpc.aio.secure_channel(target, channel_creds, options=_DEFAULT_OPTIONS)
+
+    return grpc.aio.insecure_channel(target, options=_DEFAULT_OPTIONS)
