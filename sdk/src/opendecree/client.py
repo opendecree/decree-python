@@ -30,7 +30,7 @@ from opendecree._stubs import (
     process_get_response,
 )
 from opendecree.errors import map_grpc_error
-from opendecree.types import ServerVersion
+from opendecree.types import FieldUpdate, ServerVersion
 
 
 class ConfigClient:
@@ -235,6 +235,9 @@ class ConfigClient:
         field_path: str,
         value: str,
         *,
+        description: str | None = None,
+        value_description: str | None = None,
+        expected_checksum: str | None = None,
         idempotency_key: str | None = None,
     ) -> None:
         """Set a config value.
@@ -246,6 +249,10 @@ class ConfigClient:
             tenant_id: Tenant UUID.
             field_path: Dot-separated field path (e.g., ``"payments.fee"``).
             value: The value as a string.
+            description: Optional version-level description for the audit log.
+            value_description: Optional description stored with this specific value.
+            expected_checksum: When set, the server rejects the write if the
+                current value's checksum does not match (optimistic concurrency).
             idempotency_key: When provided, the request is retried on
                 ``DEADLINE_EXCEEDED`` in addition to ``UNAVAILABLE``. Use only
                 when the write is safe to apply more than once (e.g., the value
@@ -257,6 +264,7 @@ class ConfigClient:
             NotFoundError: If the field does not exist in the schema.
             LockedError: If the field is locked.
             InvalidArgumentError: If the value fails validation.
+            ChecksumMismatchError: If ``expected_checksum`` is set and does not match.
         """
         retry_cfg = self._retry if idempotency_key is not None else write_safe_config(self._retry)
 
@@ -266,6 +274,9 @@ class ConfigClient:
                     tenant_id=tenant_id,
                     field_path=field_path,
                     value=make_string_typed_value(value),
+                    description=description,
+                    value_description=value_description,
+                    expected_checksum=expected_checksum,
                 ),
                 timeout=self._timeout,
             )
@@ -278,17 +289,18 @@ class ConfigClient:
     def set_many(
         self,
         tenant_id: str,
-        values: dict[str, str],
+        updates: list[FieldUpdate],
         *,
-        description: str = "",
+        description: str | None = None,
         idempotency_key: str | None = None,
     ) -> None:
         """Atomically set multiple config values.
 
         Args:
             tenant_id: Tenant UUID.
-            values: Dict mapping field paths to string values.
-            description: Optional description for the audit log.
+            updates: List of :class:`FieldUpdate` objects, each carrying a
+                field path, value, and optional per-field metadata.
+            description: Optional version-level description for the audit log.
             idempotency_key: When provided, the request is retried on
                 ``DEADLINE_EXCEEDED`` in addition to ``UNAVAILABLE``. See
                 ``set()`` for details on retry semantics.
@@ -297,21 +309,24 @@ class ConfigClient:
             NotFoundError: If a field does not exist in the schema.
             LockedError: If any field is locked.
             InvalidArgumentError: If any value fails validation.
+            ChecksumMismatchError: If any ``expected_checksum`` does not match.
         """
         retry_cfg = self._retry if idempotency_key is not None else write_safe_config(self._retry)
 
         def _call() -> None:
-            updates = [
+            proto_updates = [
                 self._pb2.FieldUpdate(
-                    field_path=fp,
-                    value=make_string_typed_value(v),
+                    field_path=u.field_path,
+                    value=make_string_typed_value(u.value),
+                    expected_checksum=u.expected_checksum,
+                    value_description=u.value_description,
                 )
-                for fp, v in values.items()
+                for u in updates
             ]
             self._stub.SetFields(
                 self._pb2.SetFieldsRequest(
                     tenant_id=tenant_id,
-                    updates=updates,
+                    updates=proto_updates,
                     description=description,
                 ),
                 timeout=self._timeout,

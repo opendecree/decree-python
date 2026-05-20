@@ -8,6 +8,7 @@ import pytest
 
 from opendecree.async_client import AsyncConfigClient
 from opendecree.errors import DecreeError, NotFoundError, UnavailableError
+from opendecree.types import FieldUpdate
 from tests.conftest import FakeRpcError
 
 
@@ -136,11 +137,42 @@ class TestAsyncConfigClientUnit:
         client._stub.SetField.assert_called_once()
 
     @pytest.mark.asyncio
+    async def test_set_with_metadata(self):
+        client = self._make_client()
+        client._stub.SetField = AsyncMock(return_value=MagicMock())
+
+        await client.set(
+            "t1",
+            "payments.fee",
+            "0.5%",
+            description="fee increase",
+            value_description="Q2 rate",
+            expected_checksum="abc123",
+        )
+        req = client._stub.SetField.call_args[0][0]
+        assert req.description == "fee increase"
+        assert req.value_description == "Q2 rate"
+        assert req.expected_checksum == "abc123"
+
+    @pytest.mark.asyncio
     async def test_set_many(self):
         client = self._make_client()
         client._stub.SetFields = AsyncMock(return_value=MagicMock())
 
-        await client.set_many("t1", {"a": "1", "b": "2"}, description="batch")
+        updates = [FieldUpdate("a", "1"), FieldUpdate("b", "2")]
+        await client.set_many("t1", updates, description="batch")
+        client._stub.SetFields.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_set_many_with_per_field_metadata(self):
+        client = self._make_client()
+        client._stub.SetFields = AsyncMock(return_value=MagicMock())
+
+        updates = [
+            FieldUpdate("a", "1", expected_checksum="cs1", value_description="first"),
+            FieldUpdate("b", "2"),
+        ]
+        await client.set_many("t1", updates)
         client._stub.SetFields.assert_called_once()
 
     @pytest.mark.asyncio
@@ -176,7 +208,7 @@ class TestAsyncConfigClientUnit:
         client._stub.SetFields = AsyncMock(side_effect=err)
 
         with pytest.raises(UnavailableError):
-            await client.set_many("t1", {"a": "1"})
+            await client.set_many("t1", [FieldUpdate("a", "1")])
 
     @pytest.mark.asyncio
     async def test_set_null_grpc_error(self):
@@ -218,7 +250,7 @@ class TestAsyncConfigClientUnit:
 
         with patch("opendecree._retry.asyncio.sleep", new_callable=AsyncMock):
             with pytest.raises(DecreeError):
-                await client.set_many("t1", {"a": "1"})
+                await client.set_many("t1", [FieldUpdate("a", "1")])
 
         client._stub.SetFields.assert_called_once()
 

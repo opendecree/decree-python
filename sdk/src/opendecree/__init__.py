@@ -23,7 +23,7 @@ from opendecree.errors import (
     TypeMismatchError,
     UnavailableError,
 )
-from opendecree.types import Change, ConfigValue, ServerVersion
+from opendecree.types import Change, ConfigValue, FieldUpdate, ServerVersion
 from opendecree.watcher import ConfigWatcher, WatchedField
 
 __all__ = [
@@ -39,6 +39,7 @@ __all__ = [
     "ConfigValue",
     "ConfigWatcher",
     "DecreeError",
+    "FieldUpdate",
     "IncompatibleServerError",
     "InvalidArgumentError",
     "LockedError",

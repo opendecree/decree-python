@@ -7,6 +7,7 @@ import pytest
 
 import opendecree
 from opendecree.errors import DecreeError, NotFoundError, UnavailableError
+from opendecree.types import FieldUpdate
 from tests.conftest import FakeRpcError
 
 
@@ -146,11 +147,40 @@ class TestConfigClientUnit:
         client.set("t1", "payments.fee", "0.5%")
         client._stub.SetField.assert_called_once()
 
+    def test_set_with_metadata(self):
+        client = self._make_client()
+        client._stub.SetField.return_value = MagicMock()
+
+        client.set(
+            "t1",
+            "payments.fee",
+            "0.5%",
+            description="fee increase",
+            value_description="Q2 rate",
+            expected_checksum="abc123",
+        )
+        req = client._stub.SetField.call_args[0][0]
+        assert req.description == "fee increase"
+        assert req.value_description == "Q2 rate"
+        assert req.expected_checksum == "abc123"
+
     def test_set_many(self):
         client = self._make_client()
         client._stub.SetFields.return_value = MagicMock()
 
-        client.set_many("t1", {"a": "1", "b": "2"}, description="batch")
+        updates = [FieldUpdate("a", "1"), FieldUpdate("b", "2")]
+        client.set_many("t1", updates, description="batch")
+        client._stub.SetFields.assert_called_once()
+
+    def test_set_many_with_per_field_metadata(self):
+        client = self._make_client()
+        client._stub.SetFields.return_value = MagicMock()
+
+        updates = [
+            FieldUpdate("a", "1", expected_checksum="cs1", value_description="first"),
+            FieldUpdate("b", "2"),
+        ]
+        client.set_many("t1", updates)
         client._stub.SetFields.assert_called_once()
 
     def test_set_null(self):
@@ -179,7 +209,7 @@ class TestConfigClientUnit:
         client._stub.SetFields.side_effect = FakeRpcError(grpc.StatusCode.UNAVAILABLE, "down")
 
         with pytest.raises(UnavailableError):
-            client.set_many("t1", {"a": "1"})
+            client.set_many("t1", [FieldUpdate("a", "1")])
 
     def test_set_null_grpc_error(self):
         client = self._make_client()
@@ -216,7 +246,7 @@ class TestConfigClientUnit:
 
         with patch("opendecree._retry.time.sleep"):
             with pytest.raises(DecreeError):
-                client.set_many("t1", {"a": "1"})
+                client.set_many("t1", [FieldUpdate("a", "1")])
 
         client._stub.SetFields.assert_called_once()
 
