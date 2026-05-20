@@ -25,8 +25,8 @@ from opendecree.errors import (
     ResourceExhaustedError,
     TimeoutError,
     TypeMismatchError,
-    UnimplementedError,
     UnavailableError,
+    UnimplementedError,
 )
 from opendecree.types import Change, ConfigValue, FieldUpdate, ServerVersion
 from opendecree.watcher import ConfigWatcher, WatchedField
@@ -57,8 +57,8 @@ __all__ = [
     "ServerVersion",
     "TimeoutError",
     "TypeMismatchError",
-    "UnimplementedError",
     "UnavailableError",
+    "UnimplementedError",
     "WatchedField",
     "__version__",
 ]

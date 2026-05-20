@@ -17,8 +17,8 @@ from opendecree.errors import (
     PermissionDeniedError,
     ResourceExhaustedError,
     TimeoutError,
-    UnimplementedError,
     UnavailableError,
+    UnimplementedError,
     map_grpc_error,
 )
 from tests.conftest import FakeRpcError
