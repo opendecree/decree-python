@@ -17,7 +17,7 @@ _DEFAULT_OPTIONS: list[tuple[str, int]] = [
 def _token_call_credentials(token: str) -> grpc.CallCredentials:
     """Return gRPC call credentials that inject a Bearer token."""
 
-    def _callback(context: object, callback: object) -> None:  # type: ignore[type-arg]
+    def _callback(context: object, callback: object) -> None:
         assert callable(callback)
         callback([("authorization", f"Bearer {token}")], None)
 
