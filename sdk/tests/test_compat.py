@@ -126,11 +126,11 @@ async def test_async_fetch_server_version():
     assert sv == ServerVersion(version="0.3.1", commit="abc123")
 
 
-# --- ConfigClient.server_version + check_compatibility ---
+# --- ConfigClient.get_server_version + check_compatibility ---
 
 
-def test_client_server_version_cached():
-    """server_version property fetches once, returns cached."""
+def test_client_get_server_version_cached():
+    """get_server_version() fetches once, returns cached."""
     with patch("opendecree.client.create_channel"):
         from opendecree import ConfigClient
 
@@ -147,14 +147,30 @@ def test_client_server_version_cached():
         client._server_version = None
 
         # First call fetches
-        v1 = client.server_version
+        v1 = client.get_server_version()
         assert v1.version == "0.3.1"
         assert mock_stub.GetServerInfo.call_count == 1
 
         # Second call returns cached
-        v2 = client.server_version
+        v2 = client.get_server_version()
         assert v2 is v1
         assert mock_stub.GetServerInfo.call_count == 1
+
+
+def test_client_server_version_property_deprecated():
+    """server_version property emits DeprecationWarning."""
+    with patch("opendecree.client.create_channel"):
+        from opendecree import ConfigClient
+
+        client = ConfigClient.__new__(ConfigClient)
+        client._timeout = 5.0
+        client._server_version = ServerVersion(version="0.3.1", commit="abc")
+        client._version_stub = MagicMock()
+        client._version_pb2 = MagicMock()
+
+        with pytest.warns(DeprecationWarning, match="get_server_version"):
+            sv = client.server_version
+        assert sv.version == "0.3.1"
 
 
 def test_client_check_compatibility_passes():
