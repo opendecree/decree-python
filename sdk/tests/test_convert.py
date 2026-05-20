@@ -1,10 +1,10 @@
 """Tests for type conversion."""
 
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from opendecree._convert import _parse_timedelta, convert_value, typed_value_to_string
+from opendecree._convert import URL, _parse_timedelta, convert_value, typed_value_to_string
 from opendecree.errors import TypeMismatchError
 
 
@@ -78,7 +78,60 @@ def test_convert_timedelta_invalid():
 
 def test_convert_unsupported_type():
     with pytest.raises(TypeMismatchError, match="unsupported type"):
-        convert_value("hello", list)  # type: ignore[arg-type]
+        convert_value("hello", bytes)  # type: ignore[arg-type]
+
+
+def test_convert_datetime_utc():
+    result = convert_value("2023-11-14T22:13:20Z", datetime)
+    assert isinstance(result, datetime)
+    assert result == datetime(2023, 11, 14, 22, 13, 20, tzinfo=UTC)
+
+
+def test_convert_datetime_with_offset():
+    result = convert_value("2023-11-14T22:13:20+00:00", datetime)
+    assert isinstance(result, datetime)
+    assert result.year == 2023
+
+
+def test_convert_datetime_invalid():
+    with pytest.raises(TypeMismatchError, match="cannot convert"):
+        convert_value("not-a-datetime", datetime)
+
+
+def test_convert_dict():
+    result = convert_value('{"key": "val", "n": 1}', dict)
+    assert result == {"key": "val", "n": 1}
+
+
+def test_convert_dict_invalid_json():
+    with pytest.raises(TypeMismatchError, match="cannot convert"):
+        convert_value("not-json", dict)
+
+
+def test_convert_dict_wrong_type():
+    with pytest.raises(TypeMismatchError, match="cannot convert"):
+        convert_value("[1, 2]", dict)
+
+
+def test_convert_list():
+    result = convert_value('[1, "two", true]', list)
+    assert result == [1, "two", True]
+
+
+def test_convert_list_invalid_json():
+    with pytest.raises(TypeMismatchError, match="cannot convert"):
+        convert_value("not-json", list)
+
+
+def test_convert_list_wrong_type():
+    with pytest.raises(TypeMismatchError, match="cannot convert"):
+        convert_value('{"a": 1}', list)
+
+
+def test_convert_url():
+    result = convert_value("https://example.com/path", URL)
+    assert result == "https://example.com/path"
+    assert isinstance(result, str)
 
 
 def test_parse_timedelta_empty():

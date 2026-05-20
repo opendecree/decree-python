@@ -2,14 +2,18 @@
 
 The server stores all values internally as strings. The SDK converts between
 the proto TypedValue representation and Python types (str, int, float, bool,
-timedelta) at the boundary.
+datetime, timedelta, dict, list) at the boundary.
 """
 
 from __future__ import annotations
 
-from datetime import timedelta
+import json
+from datetime import datetime, timedelta
 
 from opendecree.errors import TypeMismatchError
+
+# Type alias for url-typed fields — semantically distinct from plain str.
+URL = str
 
 
 def _parse_timedelta(s: str) -> timedelta:
@@ -60,7 +64,8 @@ def _parse_timedelta(s: str) -> timedelta:
 def convert_value(raw: str, target_type: type) -> object:
     """Convert a raw string value to the target Python type.
 
-    Supported types: str, int, float, bool, timedelta.
+    Supported types: str, int, float, bool, datetime, timedelta, dict, list.
+    URL is an alias for str and is handled identically.
 
     Raises:
         TypeMismatchError: If the value cannot be converted to the target type.
@@ -78,8 +83,15 @@ def convert_value(raw: str, target_type: type) -> object:
             if raw.lower() in ("false", "0"):
                 return False
             raise ValueError(f"cannot convert {raw!r} to bool")
+        if target_type is datetime:
+            return datetime.fromisoformat(raw)
         if target_type is timedelta:
             return _parse_timedelta(raw)
+        if target_type is dict or target_type is list:
+            result = json.loads(raw)
+            if not isinstance(result, target_type):
+                raise ValueError(f"expected {target_type.__name__}, got {type(result).__name__}")
+            return result
     except (ValueError, OverflowError) as e:
         raise TypeMismatchError(f"cannot convert {raw!r} to {target_type.__name__}: {e}") from e
 
