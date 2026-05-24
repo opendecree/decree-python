@@ -150,7 +150,7 @@ def test_deadline_clips_sleep():
     slept: list[float] = []
 
     with patch("opendecree._retry.time.sleep", side_effect=lambda s: slept.append(s)):
-        # monotonic calls: [deadline_start=0.0, loop-top-0=0.0, remaining-check=0.05, loop-top-1=0.05]
+        # monotonic: [deadline=0.0, loop-top-0=0.0, remaining=0.05, loop-top-1=0.05]
         with patch("opendecree._retry.time.monotonic", side_effect=[0.0, 0.0, 0.05, 0.05]):
             result = with_retry(RetryConfig(max_attempts=3, total_timeout=0.1), fn)
 
@@ -179,7 +179,7 @@ def test_deadline_already_passed_before_second_attempt():
     fn = MagicMock(side_effect=[err, "ok"])
 
     with patch("opendecree._retry.time.sleep"):
-        # monotonic calls: [deadline_start=0.0, loop-top-0=0.0, remaining=0.05 (ok, sleep), loop-top-1=0.2 (over)]
+        # monotonic: [deadline=0.0, loop-top-0=0.0, remaining=0.05 (ok), loop-top-1=0.2 (over)]
         with patch("opendecree._retry.time.monotonic", side_effect=[0.0, 0.0, 0.05, 0.2]):
             with pytest.raises(grpc.RpcError):
                 with_retry(RetryConfig(max_attempts=3, total_timeout=0.1), fn)
