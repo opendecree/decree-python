@@ -6,7 +6,7 @@ DOCKER_RUN_ROOT := docker run --rm -v $(CURDIR):/workspace -v $(CURDIR)/../decre
 PROTO_DIR := /proto
 GEN_DIR   := sdk/src/opendecree/_generated
 
-.PHONY: all generate lint format typecheck test build clean tools docs pre-commit help
+.PHONY: all generate lint format typecheck test integration build clean tools docs pre-commit help
 
 all: generate lint typecheck test
 
@@ -54,6 +54,11 @@ typecheck: $(TOOLS_SENTINEL)
 ## test: Run tests with coverage
 test: $(TOOLS_SENTINEL)
 	$(DOCKER_RUN_ROOT) sh -c "cd sdk && pip install -e . -q 2>/dev/null && pytest --cov --cov-report=term-missing"
+
+## integration: Run integration tests against a live server (DECREE_TEST_ADDR required)
+integration: $(TOOLS_SENTINEL)
+	@test -n "$(DECREE_TEST_ADDR)" || (echo "Set DECREE_TEST_ADDR=host:port" && exit 1)
+	$(DOCKER_RUN_ROOT) sh -c "cd sdk && pip install -e . -q 2>/dev/null && DECREE_TEST_ADDR=$(DECREE_TEST_ADDR) pytest -m integration -v"
 
 ## docs: Generate API reference HTML from docstrings (pdoc)
 docs: $(TOOLS_SENTINEL)
