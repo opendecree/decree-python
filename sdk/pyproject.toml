@@ -83,6 +83,9 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+markers = [
+    "integration: live server required — set DECREE_TEST_ADDR to run",
+]
 
 [tool.coverage.run]
 source = ["opendecree"]
