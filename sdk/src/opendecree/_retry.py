@@ -28,6 +28,10 @@ class RetryConfig:
         max_backoff: Maximum backoff duration in seconds.
         multiplier: Backoff multiplier between attempts.
         retryable_codes: gRPC status codes that trigger a retry.
+        total_timeout: Overall wall-clock budget in seconds shared across all
+            attempts. When set, backoff sleeps are clipped to the remaining
+            budget and no further attempt is made once the budget is exhausted.
+            None means no global limit (original behavior).
     """
 
     max_attempts: int = 3
@@ -40,6 +44,7 @@ class RetryConfig:
             grpc.StatusCode.DEADLINE_EXCEEDED,
         )
     )
+    total_timeout: float | None = None
 
 
 def write_safe_config(base: RetryConfig | None) -> RetryConfig | None:
@@ -60,6 +65,7 @@ def write_safe_config(base: RetryConfig | None) -> RetryConfig | None:
         max_backoff=base.max_backoff,
         multiplier=base.multiplier,
         retryable_codes=safe_codes,
+        total_timeout=base.total_timeout,
     )
 
 
@@ -68,10 +74,13 @@ def with_retry(config: RetryConfig | None, fn: Callable[[], T]) -> T:
     if config is None:
         return fn()
 
+    deadline = time.monotonic() + config.total_timeout if config.total_timeout is not None else None
     last_err: Exception | None = None
     backoff = config.initial_backoff
 
     for attempt in range(config.max_attempts):
+        if deadline is not None and time.monotonic() >= deadline:
+            break
         try:
             return fn()
         except grpc.RpcError as e:
@@ -80,7 +89,13 @@ def with_retry(config: RetryConfig | None, fn: Callable[[], T]) -> T:
                 raise
             last_err = e
             jitter = random.uniform(0.5, 1.5)
-            time.sleep(backoff * jitter)
+            sleep_time = backoff * jitter
+            if deadline is not None:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise
+                sleep_time = min(sleep_time, remaining)
+            time.sleep(sleep_time)
             backoff = min(backoff * config.multiplier, config.max_backoff)
 
     raise last_err  # type: ignore[misc]  # pragma: no cover
@@ -91,10 +106,13 @@ async def async_with_retry(config: RetryConfig | None, fn: Callable[[], Awaitabl
     if config is None:
         return await fn()
 
+    deadline = time.monotonic() + config.total_timeout if config.total_timeout is not None else None
     last_err: Exception | None = None
     backoff = config.initial_backoff
 
     for attempt in range(config.max_attempts):
+        if deadline is not None and time.monotonic() >= deadline:
+            break
         try:
             return await fn()
         except grpc.aio.AioRpcError as e:
@@ -103,7 +121,13 @@ async def async_with_retry(config: RetryConfig | None, fn: Callable[[], Awaitabl
                 raise
             last_err = e
             jitter = random.uniform(0.5, 1.5)
-            await asyncio.sleep(backoff * jitter)
+            sleep_time = backoff * jitter
+            if deadline is not None:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise
+                sleep_time = min(sleep_time, remaining)
+            await asyncio.sleep(sleep_time)
             backoff = min(backoff * config.multiplier, config.max_backoff)
 
     raise last_err  # type: ignore[misc]  # pragma: no cover

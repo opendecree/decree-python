@@ -138,3 +138,77 @@ async def test_async_exhausted_retries():
     with patch("opendecree._retry.asyncio.sleep", new_callable=AsyncMock):
         with pytest.raises(grpc.aio.AioRpcError):
             await async_with_retry(RetryConfig(max_attempts=2), fn)
+
+
+# --- Deadline budget ---
+
+
+def test_deadline_clips_sleep():
+    """Sleep is clipped to remaining budget so total wall time stays bounded."""
+    err = FakeRpcError(grpc.StatusCode.UNAVAILABLE)
+    fn = MagicMock(side_effect=[err, "ok"])
+    slept: list[float] = []
+
+    with patch("opendecree._retry.time.sleep", side_effect=lambda s: slept.append(s)):
+        # monotonic: [deadline=0.0, loop-top-0=0.0, remaining=0.05, loop-top-1=0.05]
+        with patch("opendecree._retry.time.monotonic", side_effect=[0.0, 0.0, 0.05, 0.05]):
+            result = with_retry(RetryConfig(max_attempts=3, total_timeout=0.1), fn)
+
+    assert result == "ok"
+    assert slept[0] <= 0.05 + 1e-9  # clipped to remaining budget
+
+
+def test_deadline_exhausted_raises_immediately():
+    """When budget is gone after a failure, raises without sleeping."""
+    err = FakeRpcError(grpc.StatusCode.UNAVAILABLE)
+    fn = MagicMock(side_effect=err)
+    slept: list[float] = []
+
+    with patch("opendecree._retry.time.sleep", side_effect=lambda s: slept.append(s)):
+        # monotonic calls: [deadline_start=0.0, loop-top-0=0.0, remaining-check=0.2 (over budget)]
+        with patch("opendecree._retry.time.monotonic", side_effect=[0.0, 0.0, 0.2]):
+            with pytest.raises(grpc.RpcError):
+                with_retry(RetryConfig(max_attempts=3, total_timeout=0.1), fn)
+
+    assert slept == []
+
+
+def test_deadline_already_passed_before_second_attempt():
+    """Loop-top deadline check stops further attempts once budget is exhausted."""
+    err = FakeRpcError(grpc.StatusCode.UNAVAILABLE)
+    fn = MagicMock(side_effect=[err, "ok"])
+
+    with patch("opendecree._retry.time.sleep"):
+        # monotonic: [deadline=0.0, loop-top-0=0.0, remaining=0.05 (ok), loop-top-1=0.2 (over)]
+        with patch("opendecree._retry.time.monotonic", side_effect=[0.0, 0.0, 0.05, 0.2]):
+            with pytest.raises(grpc.RpcError):
+                with_retry(RetryConfig(max_attempts=3, total_timeout=0.1), fn)
+
+    assert fn.call_count == 1
+
+
+def test_write_safe_config_preserves_total_timeout():
+    base = RetryConfig(total_timeout=30.0)
+    safe = write_safe_config(base)
+    assert safe is not None
+    assert safe.total_timeout == 30.0
+
+
+@pytest.mark.asyncio
+async def test_async_deadline_exhausted_raises_immediately():
+    err = FakeRpcError(grpc.StatusCode.UNAVAILABLE)
+    slept: list[float] = []
+
+    async def fn() -> str:
+        raise err
+
+    async def fake_sleep(s: float) -> None:
+        slept.append(s)
+
+    with patch("opendecree._retry.asyncio.sleep", side_effect=fake_sleep):
+        # monotonic: [deadline_start=0.0, loop-top-0=0.0, remaining-check=0.2 (over budget)]
+        with patch("opendecree._retry.time.monotonic", side_effect=[0.0, 0.0, 0.2]):
+            with pytest.raises(grpc.aio.AioRpcError):
+                await async_with_retry(RetryConfig(max_attempts=3, total_timeout=0.1), fn)
+
+    assert slept == []
