@@ -20,45 +20,36 @@ import queue
 import random
 import threading
 import time
-from collections.abc import Callable, Iterator
-from typing import Any, Generic, TypeVar
+from collections.abc import Iterator
+from typing import Any, TypeVar
 
 import grpc
 
-from opendecree._convert import convert_value, typed_value_to_string
+from opendecree._convert import typed_value_to_string
 from opendecree._stubs import process_get_all_response
+from opendecree._watcher_base import (
+    _RECONNECT_INITIAL,
+    _RECONNECT_MAX,
+    _RECONNECT_MULTIPLIER,
+    _WatchedFieldBase,
+)
 from opendecree.types import Change
 
 logger = logging.getLogger("opendecree.watcher")
 
 T = TypeVar("T")
 
-# Default reconnect backoff parameters.
-_RECONNECT_INITIAL = 1.0
-_RECONNECT_MAX = 30.0
-_RECONNECT_MULTIPLIER = 2.0
 
-
-class WatchedField(Generic[T]):
+class WatchedField(_WatchedFieldBase[T]):
     """A live, thread-safe configuration field with a typed value.
 
     Attributes are updated automatically by the watcher's background thread.
     """
 
     def __init__(self, path: str, type_: type[T], default: T) -> None:
-        self._path = path
-        self._type = type_
-        self._default = default
-        self._value: T = default
-        self._is_set = False
+        super().__init__(path, type_, default)
         self._lock = threading.Lock()
-        self._callbacks: list[Callable[[T, T], None]] = []
         self._change_queue: queue.Queue[Change] = queue.Queue()
-
-    @property
-    def path(self) -> str:
-        """The field path this value tracks."""
-        return self._path
 
     @property
     def value(self) -> T:
@@ -66,21 +57,8 @@ class WatchedField(Generic[T]):
         with self._lock:
             return self._value
 
-    def __bool__(self) -> bool:
-        """Truthy based on the current value. False for False, 0, '', None."""
-        return bool(self.value)
-
     def __repr__(self) -> str:
         return f"WatchedField({self._path!r}, value={self.value!r})"
-
-    def on_change(self, fn: Callable[[T, T], None]) -> Callable[[T, T], None]:
-        """Register a callback for value changes. Can be used as a decorator.
-
-        The callback receives (old_value, new_value) and is called from the
-        watcher's background thread.
-        """
-        self._callbacks.append(fn)
-        return fn
 
     def changes(self) -> Iterator[Change]:
         """Blocking iterator that yields Change events for this field.
@@ -100,30 +78,14 @@ class WatchedField(Generic[T]):
     def _update(self, raw_value: str | None, change: Change) -> None:
         """Update the field value from a raw string. Called by the watcher thread."""
         with self._lock:
-            old = self._value
-            if raw_value is not None:
-                self._value = convert_value(raw_value, self._type)  # type: ignore[assignment]
-                self._is_set = True
-            else:
-                self._value = self._default
-                self._is_set = False
-
-        # Notify callbacks (outside the lock to avoid deadlocks).
-        new = self._value
-        if old != new:
-            for cb in self._callbacks:
-                try:
-                    cb(old, new)
-                except Exception:
-                    logger.exception("Error in on_change callback for %s", self._path)
-
+            old, new = self._apply_raw(raw_value)
+        self._fire_callbacks(old, new)
         self._change_queue.put(change)
 
     def _load_initial(self, raw_value: str) -> None:
         """Set initial value from snapshot. No callbacks fired."""
         with self._lock:
-            self._value = convert_value(raw_value, self._type)  # type: ignore[assignment]
-            self._is_set = True
+            self._apply_raw(raw_value)
 
     def _stop(self) -> None:
         """Signal the changes() iterator to stop."""
