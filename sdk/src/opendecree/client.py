@@ -176,23 +176,23 @@ class ConfigClient:
     def get(self, tenant_id: str, field_path: str) -> str: ...
 
     @overload
-    def get(self, tenant_id: str, field_path: str, type: type[bool]) -> bool: ...
+    def get(self, tenant_id: str, field_path: str, value_type: type[bool]) -> bool: ...
 
     @overload
-    def get(self, tenant_id: str, field_path: str, type: type[int]) -> int: ...
+    def get(self, tenant_id: str, field_path: str, value_type: type[int]) -> int: ...
 
     @overload
-    def get(self, tenant_id: str, field_path: str, type: type[float]) -> float: ...
+    def get(self, tenant_id: str, field_path: str, value_type: type[float]) -> float: ...
 
     @overload
-    def get(self, tenant_id: str, field_path: str, type: type[timedelta]) -> timedelta: ...
+    def get(self, tenant_id: str, field_path: str, value_type: type[timedelta]) -> timedelta: ...
 
     @overload
     def get(
         self,
         tenant_id: str,
         field_path: str,
-        type: type[str],
+        value_type: type[str],
         *,
         nullable: bool,
     ) -> str | None: ...
@@ -201,7 +201,7 @@ class ConfigClient:
         self,
         tenant_id: str,
         field_path: str,
-        type: type | None = None,
+        value_type: type | None = None,
         *,
         nullable: bool = False,
     ) -> object:
@@ -213,7 +213,7 @@ class ConfigClient:
         Args:
             tenant_id: Tenant UUID.
             field_path: Dot-separated field path (e.g., "payments.fee").
-            type: Target type (str, int, float, bool, timedelta). Defaults to str.
+            value_type: Target type (str, int, float, bool, timedelta). Defaults to str.
             nullable: If True, return None for null/unset values instead of raising.
 
         Returns:
@@ -223,7 +223,7 @@ class ConfigClient:
             NotFoundError: If the field has no value (and nullable is False).
             TypeMismatchError: If the value cannot be converted to the requested type.
         """
-        target_type = type or str
+        target_type = value_type or str
 
         def _call() -> object:
             resp = self._stub.GetField(
