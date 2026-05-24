@@ -34,9 +34,9 @@ dev = [
     "pytest-asyncio>=1.3.0",
     "mypy>=2.1.0",
     "mypy-protobuf>=5.1.0",
-    "ruff>=0.15.13",
+    "ruff>=0.15.14",
     "grpcio-tools>=1.80.0",
-    "pdoc>=15.0.0",
+    "pdoc>=16.0.0",
 ]
 
 [project.urls]
