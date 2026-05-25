@@ -403,3 +403,19 @@ class TestConfigWatcher:
         # Thread must have joined within the timeout.
         assert not thread_ref.is_alive()
         assert w._thread is None
+
+    def test_thread_name_sanitizes_control_chars(self):
+        stub = MagicMock()
+        pb2 = MagicMock()
+        mock_resp = MagicMock()
+        mock_resp.config.values = []
+        stub.GetConfig.return_value = mock_resp
+        stub.Subscribe.return_value = iter([])
+
+        w = ConfigWatcher(stub, pb2, "tenant\x00evil\x1f", timeout=5.0)
+        w.start()
+        assert w._thread is not None
+        assert "\x00" not in w._thread.name
+        assert "\x1f" not in w._thread.name
+        assert "tenantevil" in w._thread.name
+        w.stop()

@@ -18,6 +18,7 @@ from __future__ import annotations
 import logging
 import queue
 import random
+import re
 import threading
 import time
 from collections.abc import Callable, Iterator
@@ -36,6 +37,8 @@ from opendecree._watcher_base import (
 from opendecree.types import Change
 
 logger = logging.getLogger("opendecree.watcher")
+
+_CONTROL_CHARS_RE = re.compile(r"[^\x20-\x7E]")
 
 T = TypeVar("T")
 
@@ -156,8 +159,9 @@ class ConfigWatcher:
 
         self._load_snapshot()
         self._stop_event.clear()
+        safe_id = _CONTROL_CHARS_RE.sub("", self._tenant_id)
         self._thread = threading.Thread(
-            target=self._subscribe_loop, daemon=True, name=f"decree-watcher-{self._tenant_id}"
+            target=self._subscribe_loop, daemon=True, name=f"decree-watcher-{safe_id}"
         )
         self._thread.start()
 
