@@ -72,13 +72,15 @@ class TestAsyncWatchedField:
     @pytest.mark.asyncio
     async def test_changes_iterator(self):
         f = AsyncWatchedField("x", str, "")
+        f._load_initial("a")
 
         c1 = Change(field_path="x", old_value="a", new_value="b", version=1)
         c2 = Change(field_path="x", old_value="b", new_value="c", version=2)
 
-        f._change_queue.put_nowait(c1)
-        f._change_queue.put_nowait(c2)
-        f._change_queue.put_nowait(None)  # sentinel
+        # Populate via the internal helpers (matching the production path).
+        f._update("b", c1)
+        f._update("c", c2)
+        f._stop()
 
         collected = [c async for c in f.changes()]
         assert len(collected) == 2
@@ -139,6 +141,72 @@ class TestAsyncWatchedField:
 
         assert len(errors) == 1
         assert isinstance(errors[0], RuntimeError)
+
+    # --- Bounded queue tests ---
+
+    def test_dropped_changes_starts_at_zero(self):
+        f = AsyncWatchedField("x", str, "", max_queue_size=5)
+        assert f.dropped_changes == 0
+
+    def test_queue_fills_without_dropping_below_limit(self):
+        f = AsyncWatchedField("x", str, "", max_queue_size=3)
+        for i in range(3):
+            c = Change(field_path="x", old_value=str(i), new_value=str(i + 1), version=i)
+            f._update(str(i + 1), c)
+
+        assert f.dropped_changes == 0
+        assert len(f._change_queue) == 3
+
+    def test_oldest_entry_dropped_when_queue_full(self):
+        f = AsyncWatchedField("x", str, "", max_queue_size=3)
+        for i in range(5):
+            c = Change(field_path="x", old_value=str(i), new_value=str(i + 1), version=i)
+            f._update(str(i + 1), c)
+
+        assert f.dropped_changes == 2
+        assert len(f._change_queue) == 3
+        versions = [c.version for c in f._change_queue]
+        assert versions == [2, 3, 4]
+
+    def test_drop_logs_warning(self, caplog):
+        import logging
+
+        f = AsyncWatchedField("payments.fee", str, "", max_queue_size=2)
+        with caplog.at_level(logging.WARNING, logger="opendecree.async_watcher"):
+            for i in range(4):
+                c = Change(
+                    field_path="payments.fee", old_value=str(i), new_value=str(i + 1), version=i
+                )
+                f._update(str(i + 1), c)
+
+        assert f.dropped_changes == 2
+        warning_records = [r for r in caplog.records if "dropped" in r.message]
+        assert len(warning_records) == 2
+        assert "payments.fee" in warning_records[0].message
+
+    def test_max_queue_size_constructor_arg(self):
+        f = AsyncWatchedField("x", str, "", max_queue_size=10)
+        assert f._max_queue_size == 10
+
+    def test_default_max_queue_size(self):
+        from opendecree.async_watcher import _DEFAULT_MAX_QUEUE_SIZE
+
+        f = AsyncWatchedField("x", str, "")
+        assert f._max_queue_size == _DEFAULT_MAX_QUEUE_SIZE
+        assert _DEFAULT_MAX_QUEUE_SIZE == 1024
+
+    @pytest.mark.asyncio
+    async def test_changes_iterator_after_overflow(self):
+        f = AsyncWatchedField("x", str, "", max_queue_size=2)
+        for i in range(4):
+            c = Change(field_path="x", old_value=str(i), new_value=str(i + 1), version=i)
+            f._update(str(i + 1), c)
+        f._stop()
+
+        collected = [c async for c in f.changes()]
+        assert len(collected) == 2
+        assert collected[0].version == 2
+        assert collected[1].version == 3
 
 
 # --- AsyncConfigWatcher unit tests ---

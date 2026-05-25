@@ -16,11 +16,11 @@ Usage::
 from __future__ import annotations
 
 import logging
-import queue
 import random
 import re
 import threading
 import time
+from collections import deque
 from collections.abc import Callable, Iterator
 from typing import Any, TypeVar
 
@@ -37,6 +37,8 @@ from opendecree._watcher_base import (
 from opendecree.types import Change
 
 logger = logging.getLogger("opendecree.watcher")
+
+_DEFAULT_MAX_QUEUE_SIZE = 1024
 
 _CONTROL_CHARS_RE = re.compile(r"[^\x20-\x7E]")
 
@@ -56,16 +58,28 @@ class WatchedField(_WatchedFieldBase[T]):
         default: T,
         *,
         on_callback_error: Callable[[Exception], None] | None = None,
+        max_queue_size: int = _DEFAULT_MAX_QUEUE_SIZE,
     ) -> None:
         super().__init__(path, type_, default, on_callback_error=on_callback_error)
         self._lock = threading.Lock()
-        self._change_queue: queue.Queue[Change] = queue.Queue()
+        self._max_queue_size = max_queue_size
+        self._dropped_changes = 0
+        # _change_queue is a deque used as a bounded FIFO. _queue_cond is used
+        # by changes() to block when the deque is empty.
+        self._change_queue: deque[Change] = deque()
+        self._queue_cond = threading.Condition(threading.Lock())
 
     @property
     def value(self) -> T:
         """The current value — always fresh, thread-safe."""
         with self._lock:
             return self._value
+
+    @property
+    def dropped_changes(self) -> int:
+        """Number of changes dropped because the queue was full."""
+        with self._queue_cond:
+            return self._dropped_changes
 
     def __repr__(self) -> str:
         return f"WatchedField({self._path!r}, value={self.value!r})"
@@ -77,10 +91,10 @@ class WatchedField(_WatchedFieldBase[T]):
         Yields Change objects with old_value and new_value as strings.
         """
         while True:
-            try:
-                change = self._change_queue.get(timeout=1.0)
-            except queue.Empty:
-                continue
+            with self._queue_cond:
+                while not self._change_queue:
+                    self._queue_cond.wait(timeout=1.0)
+                change = self._change_queue.popleft()
             if change is _SENTINEL_CHANGE:
                 return
             yield change
@@ -90,7 +104,19 @@ class WatchedField(_WatchedFieldBase[T]):
         with self._lock:
             old, new = self._apply_raw(raw_value)
         self._fire_callbacks(old, new)
-        self._change_queue.put(change)
+        with self._queue_cond:
+            if len(self._change_queue) >= self._max_queue_size:
+                self._change_queue.popleft()
+                self._dropped_changes += 1
+                logger.warning(
+                    "WatchedField %r: change queue full (max=%d), oldest entry dropped "
+                    "(total dropped: %d)",
+                    self._path,
+                    self._max_queue_size,
+                    self._dropped_changes,
+                )
+            self._change_queue.append(change)
+            self._queue_cond.notify()
 
     def _load_initial(self, raw_value: str) -> None:
         """Set initial value from snapshot. No callbacks fired."""
@@ -99,7 +125,9 @@ class WatchedField(_WatchedFieldBase[T]):
 
     def _stop(self) -> None:
         """Signal the changes() iterator to stop."""
-        self._change_queue.put(_SENTINEL_CHANGE)
+        with self._queue_cond:
+            self._change_queue.append(_SENTINEL_CHANGE)
+            self._queue_cond.notify()
 
 
 # Sentinel to signal the changes() iterator to stop.
@@ -130,6 +158,7 @@ class ConfigWatcher:
         *,
         default: T,
         on_callback_error: Callable[[Exception], None] | None = None,
+        max_queue_size: int = _DEFAULT_MAX_QUEUE_SIZE,
     ) -> WatchedField[T]:
         """Register a field to watch.
 
@@ -142,13 +171,18 @@ class ConfigWatcher:
             on_callback_error: Optional hook called with the exception when an
                 on_change callback raises. If not set, the exception is logged.
                 The hook may re-raise to terminate the watcher's background loop.
+            max_queue_size: Maximum number of unread changes buffered. When the
+                queue is full, the oldest entry is dropped and ``dropped_changes``
+                is incremented. Default: 1024.
 
         Returns:
             A WatchedField that tracks the live value.
         """
         if self._thread is not None:
             raise RuntimeError("Cannot register fields after watcher has started")
-        watched = WatchedField(path, type_, default, on_callback_error=on_callback_error)
+        watched = WatchedField(
+            path, type_, default, on_callback_error=on_callback_error, max_queue_size=max_queue_size
+        )
         self._fields[path] = watched
         return watched
 

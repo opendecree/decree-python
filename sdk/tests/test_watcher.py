@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 import grpc
 import pytest
 
-from opendecree.watcher import _SENTINEL_CHANGE, ConfigWatcher, WatchedField
+from opendecree.watcher import ConfigWatcher, WatchedField
 from tests.conftest import FakeRpcError
 
 # --- WatchedField unit tests ---
@@ -85,16 +85,17 @@ class TestWatchedField:
 
     def test_changes_iterator(self):
         f = WatchedField("x", str, "")
+        f._load_initial("a")
 
         from opendecree.types import Change
 
         c1 = Change(field_path="x", old_value="a", new_value="b", version=1)
         c2 = Change(field_path="x", old_value="b", new_value="c", version=2)
 
-        # Put changes then sentinel.
-        f._change_queue.put(c1)
-        f._change_queue.put(c2)
-        f._change_queue.put(_SENTINEL_CHANGE)
+        # Put changes then sentinel via the public internal helpers.
+        f._update("b", c1)
+        f._update("c", c2)
+        f._stop()
 
         collected = list(f.changes())
         assert len(collected) == 2
@@ -163,6 +164,85 @@ class TestWatchedField:
 
         assert len(errors) == 1
         assert isinstance(errors[0], RuntimeError)
+
+    # --- Bounded queue tests ---
+
+    def test_dropped_changes_starts_at_zero(self):
+        f = WatchedField("x", str, "", max_queue_size=5)
+        assert f.dropped_changes == 0
+
+    def test_queue_fills_without_dropping_below_limit(self):
+        from opendecree.types import Change
+
+        f = WatchedField("x", str, "", max_queue_size=3)
+        for i in range(3):
+            c = Change(field_path="x", old_value=str(i), new_value=str(i + 1), version=i)
+            f._update(str(i + 1), c)
+
+        assert f.dropped_changes == 0
+        assert len(f._change_queue) == 3
+
+    def test_oldest_entry_dropped_when_queue_full(self):
+        from opendecree.types import Change
+
+        f = WatchedField("x", str, "", max_queue_size=3)
+        changes = [
+            Change(field_path="x", old_value=str(i), new_value=str(i + 1), version=i)
+            for i in range(5)
+        ]
+        for i, c in enumerate(changes):
+            f._update(str(i + 1), c)
+
+        # Two oldest entries were dropped.
+        assert f.dropped_changes == 2
+        # Queue still holds exactly max_queue_size entries (the newest 3).
+        assert len(f._change_queue) == 3
+        versions = [c.version for c in f._change_queue]
+        assert versions == [2, 3, 4]
+
+    def test_drop_logs_warning(self, caplog):
+        import logging
+
+        from opendecree.types import Change
+
+        f = WatchedField("payments.fee", str, "", max_queue_size=2)
+        with caplog.at_level(logging.WARNING, logger="opendecree.watcher"):
+            for i in range(4):
+                c = Change(
+                    field_path="payments.fee", old_value=str(i), new_value=str(i + 1), version=i
+                )
+                f._update(str(i + 1), c)
+
+        assert f.dropped_changes == 2
+        warning_records = [r for r in caplog.records if "dropped" in r.message]
+        assert len(warning_records) == 2
+        assert "payments.fee" in warning_records[0].message
+
+    def test_max_queue_size_constructor_arg(self):
+        f = WatchedField("x", str, "", max_queue_size=10)
+        assert f._max_queue_size == 10
+
+    def test_default_max_queue_size(self):
+        from opendecree.watcher import _DEFAULT_MAX_QUEUE_SIZE
+
+        f = WatchedField("x", str, "")
+        assert f._max_queue_size == _DEFAULT_MAX_QUEUE_SIZE
+        assert _DEFAULT_MAX_QUEUE_SIZE == 1024
+
+    def test_changes_iterator_after_overflow(self):
+        from opendecree.types import Change
+
+        f = WatchedField("x", str, "", max_queue_size=2)
+        for i in range(4):
+            c = Change(field_path="x", old_value=str(i), new_value=str(i + 1), version=i)
+            f._update(str(i + 1), c)
+        f._stop()
+
+        collected = list(f.changes())
+        # Only the 2 newest changes survive.
+        assert len(collected) == 2
+        assert collected[0].version == 2
+        assert collected[1].version == 3
 
 
 # --- ConfigWatcher unit tests ---
