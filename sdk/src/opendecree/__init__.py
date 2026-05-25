@@ -29,7 +29,7 @@ from opendecree.errors import (
     UnavailableError,
     UnimplementedError,
 )
-from opendecree.types import Change, ConfigValue, FieldUpdate, ServerVersion
+from opendecree.types import Change, FieldUpdate, ServerVersion
 from opendecree.watcher import ConfigWatcher, WatchedField
 
 __all__ = [
@@ -44,7 +44,6 @@ __all__ = [
     "Change",
     "ChecksumMismatchError",
     "ConfigClient",
-    "ConfigValue",
     "ConfigWatcher",
     "DecreeError",
     "FieldUpdate",
