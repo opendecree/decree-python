@@ -21,7 +21,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import random
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from typing import Any, TypeVar
 
 import grpc.aio
@@ -47,8 +47,15 @@ class AsyncWatchedField(_WatchedFieldBase[T]):
     Updated automatically by the watcher's asyncio task.
     """
 
-    def __init__(self, path: str, type_: type[T], default: T) -> None:
-        super().__init__(path, type_, default)
+    def __init__(
+        self,
+        path: str,
+        type_: type[T],
+        default: T,
+        *,
+        on_callback_error: Callable[[Exception], None] | None = None,
+    ) -> None:
+        super().__init__(path, type_, default, on_callback_error=on_callback_error)
         self._change_queue: asyncio.Queue[Change | None] = asyncio.Queue()
 
     @property
@@ -109,7 +116,14 @@ class AsyncConfigWatcher:
         self._task: asyncio.Task | None = None  # type: ignore[type-arg]
         self._stopped = False
 
-    def field(self, path: str, type_: type[T], *, default: T) -> AsyncWatchedField[T]:
+    def field(
+        self,
+        path: str,
+        type_: type[T],
+        *,
+        default: T,
+        on_callback_error: Callable[[Exception], None] | None = None,
+    ) -> AsyncWatchedField[T]:
         """Register a field to watch.
 
         Must be called before the watcher is started (before __aenter__).
@@ -118,13 +132,16 @@ class AsyncConfigWatcher:
             path: Dot-separated field path (e.g., "payments.fee").
             type_: Python type to convert values to (str, int, float, bool, timedelta).
             default: Default value when the field is null or not set.
+            on_callback_error: Optional hook called with the exception when an
+                on_change callback raises. If not set, the exception is logged.
+                The hook may re-raise to terminate the watcher's background task.
 
         Returns:
             An AsyncWatchedField that tracks the live value.
         """
         if self._task is not None:
             raise RuntimeError("Cannot register fields after watcher has started")
-        watched = AsyncWatchedField(path, type_, default)
+        watched = AsyncWatchedField(path, type_, default, on_callback_error=on_callback_error)
         self._fields[path] = watched
         return watched
 

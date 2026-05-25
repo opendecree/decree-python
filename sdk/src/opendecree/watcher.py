@@ -20,7 +20,7 @@ import queue
 import random
 import threading
 import time
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from typing import Any, TypeVar
 
 import grpc
@@ -46,8 +46,15 @@ class WatchedField(_WatchedFieldBase[T]):
     Attributes are updated automatically by the watcher's background thread.
     """
 
-    def __init__(self, path: str, type_: type[T], default: T) -> None:
-        super().__init__(path, type_, default)
+    def __init__(
+        self,
+        path: str,
+        type_: type[T],
+        default: T,
+        *,
+        on_callback_error: Callable[[Exception], None] | None = None,
+    ) -> None:
+        super().__init__(path, type_, default, on_callback_error=on_callback_error)
         self._lock = threading.Lock()
         self._change_queue: queue.Queue[Change] = queue.Queue()
 
@@ -113,7 +120,14 @@ class ConfigWatcher:
         self._stream: grpc.Future | None = None
         self._stop_event = threading.Event()
 
-    def field(self, path: str, type_: type[T], *, default: T) -> WatchedField[T]:
+    def field(
+        self,
+        path: str,
+        type_: type[T],
+        *,
+        default: T,
+        on_callback_error: Callable[[Exception], None] | None = None,
+    ) -> WatchedField[T]:
         """Register a field to watch.
 
         Must be called before the watcher is started (before __enter__).
@@ -122,13 +136,16 @@ class ConfigWatcher:
             path: Dot-separated field path (e.g., "payments.fee").
             type_: Python type to convert values to (str, int, float, bool, timedelta).
             default: Default value when the field is null or not set.
+            on_callback_error: Optional hook called with the exception when an
+                on_change callback raises. If not set, the exception is logged.
+                The hook may re-raise to terminate the watcher's background loop.
 
         Returns:
             A WatchedField that tracks the live value.
         """
         if self._thread is not None:
             raise RuntimeError("Cannot register fields after watcher has started")
-        watched = WatchedField(path, type_, default)
+        watched = WatchedField(path, type_, default, on_callback_error=on_callback_error)
         self._fields[path] = watched
         return watched
 

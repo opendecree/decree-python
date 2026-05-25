@@ -20,13 +20,21 @@ _RECONNECT_MULTIPLIER = 2.0
 class _WatchedFieldBase(Generic[T]):
     """Common state and helpers shared by WatchedField and AsyncWatchedField."""
 
-    def __init__(self, path: str, type_: type[T], default: T) -> None:
+    def __init__(
+        self,
+        path: str,
+        type_: type[T],
+        default: T,
+        *,
+        on_callback_error: Callable[[Exception], None] | None = None,
+    ) -> None:
         self._path = path
         self._type = type_
         self._default = default
         self._value: T = default
         self._is_set = False
         self._callbacks: list[Callable[[T, T], None]] = []
+        self._on_callback_error = on_callback_error
 
     @property
     def path(self) -> str:
@@ -62,5 +70,8 @@ class _WatchedFieldBase(Generic[T]):
             for cb in self._callbacks:
                 try:
                     cb(old, new)
-                except Exception:
-                    _logger.exception("Error in on_change callback for %s", self._path)
+                except Exception as exc:
+                    if self._on_callback_error is not None:
+                        self._on_callback_error(exc)
+                    else:
+                        _logger.exception("Error in on_change callback for %s", self._path)
