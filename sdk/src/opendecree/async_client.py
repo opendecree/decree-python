@@ -53,6 +53,7 @@ class AsyncConfigClient:
         credentials: grpc.ChannelCredentials | None = None,
         timeout: float = 10.0,
         retry: RetryConfig | None = None,
+        check_version: bool = False,
     ) -> None:
         """Create a new AsyncConfigClient.
 
@@ -72,9 +73,14 @@ class AsyncConfigClient:
             timeout: Default per-RPC timeout in seconds. Defaults to 10.
             retry: Retry configuration. Defaults to ``RetryConfig()``.
                 Pass ``None`` to disable retry.
+            check_version: When True, run :meth:`check_compatibility` lazily
+                on the first RPC call. Raises :exc:`IncompatibleServerError`
+                if the server version is outside the supported range.
         """
         self._timeout = timeout
         self._retry = retry if retry is not None else RetryConfig()
+        self._check_version = check_version
+        self._version_checked = False
 
         tls_active = credentials is not None or not insecure
         if token and not tls_active:
@@ -151,6 +157,11 @@ class AsyncConfigClient:
         sv = await self.get_server_version()
         check_version_compatible(sv.version)
 
+    async def _ensure_version_checked(self) -> None:
+        if self._check_version and not self._version_checked:
+            self._version_checked = True
+            await self.check_compatibility()
+
     def _metadata(self) -> list[tuple[str, str]]:
         """Return auth metadata for each call."""
         return list(self._auth_metadata)
@@ -211,6 +222,7 @@ class AsyncConfigClient:
             TypeMismatchError: If the value cannot be converted to the requested type.
         """
         target_type = value_type or str
+        await self._ensure_version_checked()
 
         async def _call() -> object:
             resp = await self._stub.GetField(
@@ -237,6 +249,8 @@ class AsyncConfigClient:
         Raises:
             NotFoundError: If the tenant does not exist.
         """
+
+        await self._ensure_version_checked()
 
         async def _call() -> dict[str, str]:
             resp = await self._stub.GetConfig(
@@ -289,6 +303,7 @@ class AsyncConfigClient:
             ChecksumMismatchError: If ``expected_checksum`` is set and does not match.
         """
         retry_cfg = self._retry if idempotency_key is not None else write_safe_config(self._retry)
+        await self._ensure_version_checked()
 
         async def _call() -> None:
             await self._stub.SetField(
@@ -335,6 +350,7 @@ class AsyncConfigClient:
             ChecksumMismatchError: If any ``expected_checksum`` does not match.
         """
         retry_cfg = self._retry if idempotency_key is not None else write_safe_config(self._retry)
+        await self._ensure_version_checked()
 
         async def _call() -> None:
             proto_updates = [
@@ -382,6 +398,7 @@ class AsyncConfigClient:
             LockedError: If the field is locked.
         """
         retry_cfg = self._retry if idempotency_key is not None else write_safe_config(self._retry)
+        await self._ensure_version_checked()
 
         async def _call() -> None:
             await self._stub.SetField(

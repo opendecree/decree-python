@@ -212,3 +212,85 @@ def test_client_check_compatibility_fails():
 
         with pytest.raises(IncompatibleServerError):
             client.check_compatibility()
+
+
+# --- check_version ctor flag ---
+
+
+def _make_client_with_version(server_version: str, check_version: bool = True):
+    """Return a ConfigClient.__new__ instance wired with a mock server version."""
+    from opendecree import ConfigClient
+
+    client = ConfigClient.__new__(ConfigClient)
+    client._timeout = 5.0
+    client._check_version = check_version
+    client._version_checked = False
+    client._server_version = ServerVersion(version=server_version, commit="abc")
+    client._version_stub = MagicMock()
+    client._version_pb2 = MagicMock()
+    return client
+
+
+def test_ensure_version_checked_runs_once():
+    client = _make_client_with_version("0.3.1")
+    with patch.object(client, "check_compatibility") as mock_check:
+        client._ensure_version_checked()
+        client._ensure_version_checked()
+        mock_check.assert_called_once()
+
+
+def test_ensure_version_checked_noop_when_disabled():
+    client = _make_client_with_version("0.3.1", check_version=False)
+    with patch.object(client, "check_compatibility") as mock_check:
+        client._ensure_version_checked()
+        mock_check.assert_not_called()
+
+
+def test_ensure_version_checked_raises_on_incompatible():
+    client = _make_client_with_version("0.1.0")
+    with pytest.raises(IncompatibleServerError):
+        client._ensure_version_checked()
+
+
+@pytest.mark.asyncio
+async def test_async_ensure_version_checked_runs_once():
+    from opendecree import AsyncConfigClient
+
+    client = AsyncConfigClient.__new__(AsyncConfigClient)
+    client._timeout = 5.0
+    client._check_version = True
+    client._version_checked = False
+    client._server_version = ServerVersion(version="0.3.1", commit="abc")
+    client._version_stub = MagicMock()
+    client._version_pb2 = MagicMock()
+
+    call_count = 0
+
+    async def fake_check():
+        nonlocal call_count
+        call_count += 1
+
+    client.check_compatibility = fake_check
+    await client._ensure_version_checked()
+    await client._ensure_version_checked()
+    assert call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_async_ensure_version_checked_noop_when_disabled():
+    from opendecree import AsyncConfigClient
+
+    client = AsyncConfigClient.__new__(AsyncConfigClient)
+    client._timeout = 5.0
+    client._check_version = False
+    client._version_checked = False
+
+    called = False
+
+    async def fake_check():
+        nonlocal called
+        called = True
+
+    client.check_compatibility = fake_check
+    await client._ensure_version_checked()
+    assert not called
