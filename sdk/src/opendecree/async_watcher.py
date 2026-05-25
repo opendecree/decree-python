@@ -21,6 +21,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import random
+import re
 from collections.abc import AsyncIterator, Callable
 from typing import Any, TypeVar
 
@@ -37,6 +38,8 @@ from opendecree._watcher_base import (
 from opendecree.types import Change
 
 logger = logging.getLogger("opendecree.async_watcher")
+
+_CONTROL_CHARS_RE = re.compile(r"[^\x20-\x7E]")
 
 T = TypeVar("T")
 
@@ -152,9 +155,8 @@ class AsyncConfigWatcher:
 
         await self._load_snapshot()
         self._stopped = False
-        self._task = asyncio.create_task(
-            self._subscribe_loop(), name=f"decree-watcher-{self._tenant_id}"
-        )
+        safe_id = _CONTROL_CHARS_RE.sub("", self._tenant_id)
+        self._task = asyncio.create_task(self._subscribe_loop(), name=f"decree-watcher-{safe_id}")
 
     async def stop(self) -> None:
         """Stop watching and cancel the background task."""

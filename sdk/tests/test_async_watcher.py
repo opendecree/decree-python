@@ -341,3 +341,25 @@ class TestAsyncConfigWatcher:
         stub.Subscribe.assert_called_once()
         _, sub_kwargs = stub.Subscribe.call_args
         assert sub_kwargs.get("metadata") == auth_meta
+
+    @pytest.mark.asyncio
+    async def test_task_name_sanitizes_control_chars(self):
+        stub = MagicMock()
+        pb2 = MagicMock()
+        mock_resp = MagicMock()
+        mock_resp.config.values = []
+        stub.GetConfig = AsyncMock(return_value=mock_resp)
+
+        async def empty_stream():
+            return
+            yield
+
+        stub.Subscribe.return_value = empty_stream()
+
+        w = AsyncConfigWatcher(stub, pb2, "tenant\x00evil\x1f", timeout=5.0)
+        await w.start()
+        assert w._task is not None
+        assert "\x00" not in w._task.get_name()
+        assert "\x1f" not in w._task.get_name()
+        assert "tenantevil" in w._task.get_name()
+        await w.stop()
