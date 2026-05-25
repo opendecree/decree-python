@@ -296,3 +296,24 @@ class TestAsyncConfigClientUnit:
         ctx = client.watch("t1")
         async with ctx as watcher:
             assert watcher is not None
+
+    def test_custom_interceptors_passed_to_channel(self):
+        custom = MagicMock()
+        with patch("opendecree.async_client.create_aio_channel") as mock_ch:
+            mock_ch.return_value = MagicMock()
+            AsyncConfigClient("localhost:9090", interceptors=[custom])
+        assert mock_ch.call_args.kwargs["interceptors"] == [custom]
+
+    def test_no_interceptors_by_default(self):
+        with patch("opendecree.async_client.create_aio_channel") as mock_ch:
+            mock_ch.return_value = MagicMock()
+            AsyncConfigClient("localhost:9090")
+        assert mock_ch.call_args.kwargs.get("interceptors") is None
+
+    def test_multiple_custom_interceptors_preserved(self):
+        a = MagicMock()
+        b = MagicMock()
+        with patch("opendecree.async_client.create_aio_channel") as mock_ch:
+            mock_ch.return_value = MagicMock()
+            AsyncConfigClient("localhost:9090", interceptors=[a, b])
+        assert mock_ch.call_args.kwargs["interceptors"] == [a, b]

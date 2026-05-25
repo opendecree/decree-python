@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import warnings
 from datetime import timedelta
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Any, overload
 
 if TYPE_CHECKING:
     from opendecree.async_watcher import AsyncConfigWatcher
@@ -54,6 +54,7 @@ class AsyncConfigClient:
         timeout: float = 10.0,
         retry: RetryConfig | None = None,
         check_version: bool = False,
+        interceptors: list[Any] | None = None,
     ) -> None:
         """Create a new AsyncConfigClient.
 
@@ -76,6 +77,9 @@ class AsyncConfigClient:
             check_version: When True, run :meth:`check_compatibility` lazily
                 on the first RPC call. Raises :exc:`IncompatibleServerError`
                 if the server version is outside the supported range.
+            interceptors: Optional list of :class:`grpc.aio.ClientInterceptor`
+                instances to inject (e.g., for logging, tracing, or metrics).
+                Passed directly to the ``grpc.aio`` channel.
         """
         self._timeout = timeout
         self._retry = retry if retry is not None else RetryConfig()
@@ -102,7 +106,11 @@ class AsyncConfigClient:
             subject=subject, role=role, tenant_id=tenant_id, token=metadata_token
         )
         self._channel = create_aio_channel(
-            target, insecure=insecure, credentials=credentials, token=channel_token
+            target,
+            insecure=insecure,
+            credentials=credentials,
+            token=channel_token,
+            interceptors=interceptors,
         )
 
         cs_pb2, cs_grpc = ensure_stubs()

@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import warnings
 from datetime import timedelta
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Any, overload
 
 if TYPE_CHECKING:
     from opendecree.watcher import ConfigWatcher
@@ -57,6 +57,7 @@ class ConfigClient:
         timeout: float = 10.0,
         retry: RetryConfig | None = None,
         check_version: bool = False,
+        interceptors: list[Any] | None = None,
     ) -> None:
         """Create a new ConfigClient.
 
@@ -79,6 +80,12 @@ class ConfigClient:
             check_version: When True, run :meth:`check_compatibility` lazily
                 on the first RPC call. Raises :exc:`IncompatibleServerError`
                 if the server version is outside the supported range.
+            interceptors: Optional list of
+                :class:`grpc.UnaryUnaryClientInterceptor` /
+                :class:`grpc.UnaryStreamClientInterceptor` instances to inject
+                (e.g., for logging, tracing, or metrics). User-supplied
+                interceptors are applied outermost (before the SDK's internal
+                auth interceptor).
         """
         self._timeout = timeout
         self._retry = retry if retry is not None else RetryConfig()
@@ -102,15 +109,16 @@ class ConfigClient:
         metadata = _build_metadata(
             subject=subject, role=role, tenant_id=tenant_id, token=metadata_token
         )
-        interceptors: list[grpc.UnaryUnaryClientInterceptor] = []
+        # User interceptors are outermost; auth interceptor runs inside them.
+        all_interceptors: list[Any] = list(interceptors) if interceptors else []
         if metadata:
-            interceptors.append(AuthInterceptor(metadata))
+            all_interceptors.append(AuthInterceptor(metadata))
 
         channel = create_channel(
             target, insecure=insecure, credentials=credentials, token=channel_token
         )
-        if interceptors:
-            self._channel = grpc.intercept_channel(channel, *interceptors)
+        if all_interceptors:
+            self._channel = grpc.intercept_channel(channel, *all_interceptors)
         else:
             self._channel = channel
         self._raw_channel = channel  # keep ref for close()
