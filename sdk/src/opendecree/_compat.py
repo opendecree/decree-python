@@ -6,8 +6,10 @@ Results are cached per client instance.
 
 from __future__ import annotations
 
-import re
 from typing import Any
+
+from packaging.specifiers import InvalidSpecifier, Specifier
+from packaging.version import InvalidVersion, Version
 
 import opendecree
 from opendecree.errors import IncompatibleServerError
@@ -64,44 +66,24 @@ def check_version_compatible(server_version: str, supported_range: str | None = 
         return
 
     for constraint in supported_range.split(","):
-        constraint = constraint.strip()
-        if not _satisfies(parsed, constraint):
+        if not _satisfies(parsed, constraint.strip()):
             raise IncompatibleServerError(
                 f"Server version {server_version} is not compatible with this SDK "
                 f"(requires {supported_range})"
             )
 
 
-def _parse_version(version: str) -> tuple[int, ...] | None:
-    """Parse a semver string into a tuple of ints, or None if unparseable."""
-    match = re.match(r"^v?(\d+(?:\.\d+)*)", version)
-    if not match:
+def _parse_version(version: str) -> Version | None:
+    """Parse a version string via PEP 440, or None if unparseable."""
+    try:
+        return Version(version)
+    except InvalidVersion:
         return None
-    return tuple(int(p) for p in match.group(1).split("."))
 
 
-def _satisfies(version: tuple[int, ...], constraint: str) -> bool:
-    """Check if a version tuple satisfies a single constraint like '>=0.3.0'."""
-    match = re.match(r"^(>=|<=|>|<|==|!=)(.+)$", constraint)
-    if not match:
+def _satisfies(version: Version, constraint: str) -> bool:
+    """Check if a Version satisfies a single constraint like '>=0.3.0'."""
+    try:
+        return version in Specifier(constraint, prereleases=True)
+    except InvalidSpecifier:
         return True
-
-    op = match.group(1)
-    target = _parse_version(match.group(2))
-    if target is None:
-        return True
-
-    # Pad to same length for comparison.
-    max_len = max(len(version), len(target))
-    v = version + (0,) * (max_len - len(version))
-    t = target + (0,) * (max_len - len(target))
-
-    ops = {
-        ">=": v >= t,
-        "<=": v <= t,
-        ">": v > t,
-        "<": v < t,
-        "==": v == t,
-        "!=": v != t,
-    }
-    return ops[op]
