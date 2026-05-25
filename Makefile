@@ -6,7 +6,7 @@ DOCKER_RUN_ROOT := docker run --rm -v $(CURDIR):/workspace -v $(CURDIR)/../decre
 PROTO_DIR := /proto
 GEN_DIR   := sdk/src/opendecree/_generated
 
-.PHONY: all generate lint format typecheck test integration build clean tools docs pre-commit help
+.PHONY: all generate gen-constants lint format typecheck test integration build clean tools docs pre-commit help
 
 all: generate lint typecheck test
 
@@ -19,8 +19,12 @@ $(TOOLS_SENTINEL): build/Dockerfile.tools
 	docker build -t $(TOOLS_IMAGE) -f build/Dockerfile.tools build/
 	@touch $(TOOLS_SENTINEL)
 
-## generate: Generate Python proto stubs from proto definitions
-generate: $(TOOLS_SENTINEL)
+## gen-constants: Generate _constants.py from pyproject.toml [tool.opendecree]
+gen-constants:
+	python3 build/gen-constants.py
+
+## generate: Generate Python proto stubs and package constants
+generate: $(TOOLS_SENTINEL) gen-constants
 	$(DOCKER_RUN) sh -c '\
 		SITE=$$(python -c "import site; print(site.getsitepackages()[0])") && \
 		GRPC_PROTO=$$(python -c "import grpc_tools; import os; print(os.path.join(os.path.dirname(grpc_tools.__file__), \"_proto\"))") && \

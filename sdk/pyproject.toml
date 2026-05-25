@@ -93,3 +93,6 @@ omit = ["src/opendecree/_generated/*"]
 
 [tool.coverage.report]
 fail_under = 95
+
+[tool.opendecree]
+supported_server_version = ">=0.3.0,<1.0.0"
