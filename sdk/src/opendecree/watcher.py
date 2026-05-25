@@ -29,10 +29,12 @@ import grpc
 from opendecree._convert import typed_value_to_string
 from opendecree._stubs import process_get_all_response
 from opendecree._watcher_base import (
+    _DEFAULT_CHANGE_QUEUE_SIZE,
     _RECONNECT_INITIAL,
     _RECONNECT_MAX,
     _RECONNECT_MULTIPLIER,
     _WatchedFieldBase,
+    _validate_max_queue_size,
 )
 from opendecree.types import Change
 
@@ -55,11 +57,13 @@ class WatchedField(_WatchedFieldBase[T]):
         type_: type[T],
         default: T,
         *,
+        max_queue_size: int = _DEFAULT_CHANGE_QUEUE_SIZE,
         on_callback_error: Callable[[Exception], None] | None = None,
     ) -> None:
+        max_queue_size = _validate_max_queue_size(max_queue_size)
         super().__init__(path, type_, default, on_callback_error=on_callback_error)
         self._lock = threading.Lock()
-        self._change_queue: queue.Queue[Change] = queue.Queue()
+        self._change_queue: queue.Queue[Change] = queue.Queue(maxsize=max_queue_size)
 
     @property
     def value(self) -> T:
@@ -90,7 +94,7 @@ class WatchedField(_WatchedFieldBase[T]):
         with self._lock:
             old, new = self._apply_raw(raw_value)
         self._fire_callbacks(old, new)
-        self._change_queue.put(change)
+        self._enqueue_change(change)
 
     def _load_initial(self, raw_value: str) -> None:
         """Set initial value from snapshot. No callbacks fired."""
@@ -99,7 +103,32 @@ class WatchedField(_WatchedFieldBase[T]):
 
     def _stop(self) -> None:
         """Signal the changes() iterator to stop."""
-        self._change_queue.put(_SENTINEL_CHANGE)
+        self._enqueue_stop()
+
+    def _enqueue_change(self, change: Change) -> None:
+        """Queue a change, dropping the oldest queued change if the queue is full."""
+        while True:
+            try:
+                self._change_queue.put_nowait(change)
+                return
+            except queue.Full:
+                try:
+                    self._change_queue.get_nowait()
+                except queue.Empty:
+                    continue
+                self._dropped_changes += 1
+
+    def _enqueue_stop(self) -> None:
+        """Queue the stop sentinel without blocking on a full queue."""
+        while True:
+            try:
+                self._change_queue.put_nowait(_SENTINEL_CHANGE)
+                return
+            except queue.Full:
+                try:
+                    self._change_queue.get_nowait()
+                except queue.Empty:
+                    continue
 
 
 # Sentinel to signal the changes() iterator to stop.
@@ -129,6 +158,7 @@ class ConfigWatcher:
         type_: type[T],
         *,
         default: T,
+        max_queue_size: int = _DEFAULT_CHANGE_QUEUE_SIZE,
         on_callback_error: Callable[[Exception], None] | None = None,
     ) -> WatchedField[T]:
         """Register a field to watch.
@@ -139,6 +169,8 @@ class ConfigWatcher:
             path: Dot-separated field path (e.g., "payments.fee").
             type_: Python type to convert values to (str, int, float, bool, timedelta).
             default: Default value when the field is null or not set.
+            max_queue_size: Maximum number of unread changes buffered before
+                dropping the oldest queued change.
             on_callback_error: Optional hook called with the exception when an
                 on_change callback raises. If not set, the exception is logged.
                 The hook may re-raise to terminate the watcher's background loop.
@@ -148,7 +180,13 @@ class ConfigWatcher:
         """
         if self._thread is not None:
             raise RuntimeError("Cannot register fields after watcher has started")
-        watched = WatchedField(path, type_, default, on_callback_error=on_callback_error)
+        watched = WatchedField(
+            path,
+            type_,
+            default,
+            max_queue_size=max_queue_size,
+            on_callback_error=on_callback_error,
+        )
         self._fields[path] = watched
         return watched
 

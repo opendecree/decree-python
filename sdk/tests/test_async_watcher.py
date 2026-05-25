@@ -85,6 +85,25 @@ class TestAsyncWatchedField:
         assert collected[0].new_value == "b"
         assert collected[1].new_value == "c"
 
+    def test_bounded_queue_drops_oldest_change(self):
+        f = AsyncWatchedField("x", int, 0, max_queue_size=2)
+
+        c1 = Change(field_path="x", old_value="0", new_value="1", version=1)
+        c2 = Change(field_path="x", old_value="1", new_value="2", version=2)
+        c3 = Change(field_path="x", old_value="2", new_value="3", version=3)
+
+        f._update("1", c1)
+        f._update("2", c2)
+        f._update("3", c3)
+
+        assert f.dropped_changes == 1
+        assert f._change_queue.get_nowait().version == 2
+        assert f._change_queue.get_nowait().version == 3
+
+    def test_invalid_max_queue_size_raises(self):
+        with pytest.raises(ValueError, match="max_queue_size"):
+            AsyncWatchedField("x", int, 0, max_queue_size=0)
+
     def test_repr(self):
         f = AsyncWatchedField("payments.fee", float, 0.01)
         assert "payments.fee" in repr(f)
@@ -160,6 +179,16 @@ class TestAsyncConfigWatcher:
         f = w.field("rate", float, default=0.01)
         assert isinstance(f, AsyncWatchedField)
         assert f.value == 0.01
+
+    def test_register_field_with_max_queue_size(self):
+        w = self._make_watcher()
+        f = w.field("rate", int, default=0, max_queue_size=1)
+
+        f._update("1", Change(field_path="rate", old_value="0", new_value="1", version=1))
+        f._update("2", Change(field_path="rate", old_value="1", new_value="2", version=2))
+
+        assert f.dropped_changes == 1
+        assert f._change_queue.get_nowait().version == 2
 
     @pytest.mark.asyncio
     async def test_cannot_register_after_start(self):

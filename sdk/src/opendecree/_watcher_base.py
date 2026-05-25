@@ -15,6 +15,14 @@ _logger = logging.getLogger("opendecree.watcher")
 _RECONNECT_INITIAL = 1.0
 _RECONNECT_MAX = 30.0
 _RECONNECT_MULTIPLIER = 2.0
+_DEFAULT_CHANGE_QUEUE_SIZE = 1024
+
+
+def _validate_max_queue_size(max_queue_size: int) -> int:
+    """Validate a positive change queue size."""
+    if max_queue_size <= 0:
+        raise ValueError("max_queue_size must be greater than 0")
+    return max_queue_size
 
 
 class _WatchedFieldBase(Generic[T]):
@@ -35,11 +43,17 @@ class _WatchedFieldBase(Generic[T]):
         self._is_set = False
         self._callbacks: list[Callable[[T, T], None]] = []
         self._on_callback_error = on_callback_error
+        self._dropped_changes = 0
 
     @property
     def path(self) -> str:
         """The field path this value tracks."""
         return self._path
+
+    @property
+    def dropped_changes(self) -> int:
+        """Number of queued changes dropped because the change queue was full."""
+        return self._dropped_changes
 
     def on_change(self, fn: Callable[[T, T], None]) -> Callable[[T, T], None]:
         """Register a callback for value changes. Can be used as a decorator.
