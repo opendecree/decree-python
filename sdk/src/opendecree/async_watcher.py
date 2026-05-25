@@ -22,6 +22,7 @@ import asyncio
 import logging
 import random
 import re
+from collections import deque
 from collections.abc import AsyncIterator, Callable
 from typing import Any, TypeVar
 
@@ -41,6 +42,8 @@ logger = logging.getLogger("opendecree.async_watcher")
 
 _CONTROL_CHARS_RE = re.compile(r"[^\x20-\x7E]")
 
+_DEFAULT_MAX_QUEUE_SIZE = 1024
+
 T = TypeVar("T")
 
 
@@ -57,14 +60,25 @@ class AsyncWatchedField(_WatchedFieldBase[T]):
         default: T,
         *,
         on_callback_error: Callable[[Exception], None] | None = None,
+        max_queue_size: int = _DEFAULT_MAX_QUEUE_SIZE,
     ) -> None:
         super().__init__(path, type_, default, on_callback_error=on_callback_error)
-        self._change_queue: asyncio.Queue[Change | None] = asyncio.Queue()
+        self._max_queue_size = max_queue_size
+        self._dropped_changes = 0
+        # _change_queue is a deque used as a bounded FIFO. _queue_event gates
+        # the async changes() iterator when the deque is empty.
+        self._change_queue: deque[Change | None] = deque()
+        self._queue_event = asyncio.Event()
 
     @property
     def value(self) -> T:
         """The current value — always fresh."""
         return self._value
+
+    @property
+    def dropped_changes(self) -> int:
+        """Number of changes dropped because the queue was full."""
+        return self._dropped_changes
 
     def __repr__(self) -> str:
         return f"AsyncWatchedField({self._path!r}, value={self._value!r})"
@@ -75,7 +89,14 @@ class AsyncWatchedField(_WatchedFieldBase[T]):
         Yields Change objects until the watcher is stopped.
         """
         while True:
-            change = await self._change_queue.get()
+            await self._queue_event.wait()
+            if not self._change_queue:
+                # Spurious wake — clear and re-wait.
+                self._queue_event.clear()
+                continue
+            change = self._change_queue.popleft()
+            if not self._change_queue:
+                self._queue_event.clear()
             if change is None:  # sentinel
                 return
             yield change
@@ -84,7 +105,18 @@ class AsyncWatchedField(_WatchedFieldBase[T]):
         """Update the field value from a raw string. Called by the watcher task."""
         old, new = self._apply_raw(raw_value)
         self._fire_callbacks(old, new)
-        self._change_queue.put_nowait(change)
+        if len(self._change_queue) >= self._max_queue_size:
+            self._change_queue.popleft()
+            self._dropped_changes += 1
+            logger.warning(
+                "AsyncWatchedField %r: change queue full (max=%d), oldest entry dropped "
+                "(total dropped: %d)",
+                self._path,
+                self._max_queue_size,
+                self._dropped_changes,
+            )
+        self._change_queue.append(change)
+        self._queue_event.set()
 
     def _load_initial(self, raw_value: str) -> None:
         """Set initial value from snapshot. No callbacks fired."""
@@ -92,7 +124,8 @@ class AsyncWatchedField(_WatchedFieldBase[T]):
 
     def _stop(self) -> None:
         """Signal the changes() iterator to stop."""
-        self._change_queue.put_nowait(None)
+        self._change_queue.append(None)
+        self._queue_event.set()
 
 
 class AsyncConfigWatcher:
@@ -126,6 +159,7 @@ class AsyncConfigWatcher:
         *,
         default: T,
         on_callback_error: Callable[[Exception], None] | None = None,
+        max_queue_size: int = _DEFAULT_MAX_QUEUE_SIZE,
     ) -> AsyncWatchedField[T]:
         """Register a field to watch.
 
@@ -138,13 +172,18 @@ class AsyncConfigWatcher:
             on_callback_error: Optional hook called with the exception when an
                 on_change callback raises. If not set, the exception is logged.
                 The hook may re-raise to terminate the watcher's background task.
+            max_queue_size: Maximum number of unread changes buffered. When the
+                queue is full, the oldest entry is dropped and ``dropped_changes``
+                is incremented. Default: 1024.
 
         Returns:
             An AsyncWatchedField that tracks the live value.
         """
         if self._task is not None:
             raise RuntimeError("Cannot register fields after watcher has started")
-        watched = AsyncWatchedField(path, type_, default, on_callback_error=on_callback_error)
+        watched = AsyncWatchedField(
+            path, type_, default, on_callback_error=on_callback_error, max_queue_size=max_queue_size
+        )
         self._fields[path] = watched
         return watched
 
