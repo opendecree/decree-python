@@ -18,8 +18,10 @@ The tenant ID is written to `.tenant-id` — examples read it automatically.
 
 ## Prerequisites
 
+OpenDecree is currently in alpha. Install with the `--pre` flag so pip's resolver includes pre-release versions:
+
 ```bash
-pip install opendecree
+pip install --pre opendecree
 ```
 
 For the FastAPI example, also install:
