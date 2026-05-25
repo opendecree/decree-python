@@ -9,23 +9,6 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True, slots=True)
-class ConfigValue:
-    """A single configuration value.
-
-    Attributes:
-        field_path: Dot-separated field path (e.g., ``"payments.fee"``).
-        value: The raw string value.
-        checksum: xxHash checksum of the value.
-        description: Optional description set when the value was written.
-    """
-
-    field_path: str
-    value: str
-    checksum: str
-    description: str = ""
-
-
-@dataclass(frozen=True, slots=True)
 class Change:
     """A configuration change event from a subscription.
 

@@ -1,14 +1,6 @@
 """Tests for public data types."""
 
-from opendecree.types import Change, ConfigValue, ServerVersion
-
-
-def test_config_value_frozen():
-    cv = ConfigValue(field_path="a.b", value="1", checksum="abc")
-    assert cv.field_path == "a.b"
-    assert cv.value == "1"
-    assert cv.checksum == "abc"
-    assert cv.description == ""
+from opendecree.types import Change, ServerVersion
 
 
 def test_change():
