@@ -4,16 +4,17 @@ Live config subscriptions via `ConfigWatcher` and `WatchedField[T]`.
 
 ## Basic usage
 
-Create a watcher from a client. Register fields before entering the context manager:
+Create a watcher from a client. Register fields before starting the watcher:
 
 ```python
 from opendecree import ConfigClient
 
 with ConfigClient("localhost:9090", subject="myapp") as client:
-    with client.watch("tenant-id") as watcher:
-        fee = watcher.field("payments.fee", float, default=0.01)
-        enabled = watcher.field("payments.enabled", bool, default=False)
+    watcher = client.watch("tenant-id")
+    fee = watcher.field("payments.fee", float, default=0.01)
+    enabled = watcher.field("payments.enabled", bool, default=False)
 
+    with watcher:
         # Read current values
         print(fee.value)      # 0.025 (float, always fresh)
         print(enabled.value)  # True (bool)
@@ -79,7 +80,7 @@ The iterator blocks until a change arrives. It stops when the watcher exits.
 
 ## Lifecycle
 
-Register fields **before** the `with` block. Fields cannot be added after the watcher starts:
+Register fields **before** starting the watcher. Calling `field()` after `start()` raises `RuntimeError`:
 
 ```python
 watcher = client.watch("tenant-id")
@@ -87,20 +88,10 @@ watcher = client.watch("tenant-id")
 # Register fields first
 fee = watcher.field("payments.fee", float, default=0.01)
 
-# Then start
+# Then start — loads snapshot and subscribes
 with watcher:
     print(fee.value)
 ```
-
-Or equivalently:
-
-```python
-with client.watch("tenant-id") as watcher:
-    fee = watcher.field("payments.fee", float, default=0.01)
-    # ...
-```
-
-Wait — fields must be registered **before** `start()`. When using the two-line form, register between `watch()` and `with`. When using the one-line form, the watcher loads a snapshot on enter, so fields registered inside the `with` block will get their initial values from the snapshot.
 
 ## Auto-reconnect
 
@@ -119,11 +110,14 @@ You can create multiple watchers for different tenants:
 
 ```python
 with ConfigClient("localhost:9090", subject="myapp") as client:
-    with client.watch("tenant-a") as watcher_a:
-        with client.watch("tenant-b") as watcher_b:
-            fee_a = watcher_a.field("payments.fee", float, default=0.01)
-            fee_b = watcher_b.field("payments.fee", float, default=0.01)
-            # Both update independently
+    watcher_a = client.watch("tenant-a")
+    watcher_b = client.watch("tenant-b")
+    fee_a = watcher_a.field("payments.fee", float, default=0.01)
+    fee_b = watcher_b.field("payments.fee", float, default=0.01)
+
+    with watcher_a, watcher_b:
+        # Both update independently
+        print(fee_a.value, fee_b.value)
 ```
 
 ## Next steps
