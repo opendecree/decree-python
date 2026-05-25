@@ -99,6 +99,7 @@ def create_aio_channel(
     insecure: bool = True,
     credentials: grpc.ChannelCredentials | None = None,
     token: str | None = None,
+    interceptors: list | None = None,
     max_send_message_length: int | None = None,
     max_recv_message_length: int | None = None,
     keepalive_time_ms: int = _DEFAULT_KEEPALIVE_TIME_MS,
@@ -127,6 +128,7 @@ def create_aio_channel(
         reconnect_backoff_initial_ms,
         reconnect_backoff_max_ms,
     )
+    aio_interceptors = tuple(interceptors) if interceptors else ()
 
     channel_creds: grpc.ChannelCredentials | None = credentials
     if channel_creds is None and not insecure:
@@ -137,6 +139,8 @@ def create_aio_channel(
             channel_creds = grpc.composite_channel_credentials(
                 channel_creds, _token_call_credentials(token)
             )
-        return grpc.aio.secure_channel(target, channel_creds, options=options)
+        return grpc.aio.secure_channel(
+            target, channel_creds, options=options, interceptors=aio_interceptors
+        )
 
-    return grpc.aio.insecure_channel(target, options=options)
+    return grpc.aio.insecure_channel(target, options=options, interceptors=aio_interceptors)

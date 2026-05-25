@@ -338,3 +338,43 @@ class TestConfigClientUnit:
         assert ctx is not None
         with ctx as watcher:
             assert watcher is not None
+
+    def test_custom_interceptors_passed_to_intercept_channel(self):
+        custom = MagicMock(spec=grpc.UnaryUnaryClientInterceptor)
+        with patch("opendecree.client.create_channel") as mock_ch:
+            mock_channel = MagicMock()
+            mock_ch.return_value = mock_channel
+            with patch("opendecree.client.grpc.intercept_channel") as mock_intercept:
+                mock_intercept.return_value = mock_channel
+                opendecree.ConfigClient("localhost:9090", interceptors=[custom])
+        args = mock_intercept.call_args[0]
+        assert custom in args
+
+    def test_custom_interceptors_outermost(self):
+        """User interceptors must come before AuthInterceptor."""
+        from opendecree._interceptors import AuthInterceptor
+
+        custom = MagicMock(spec=grpc.UnaryUnaryClientInterceptor)
+        with patch("opendecree.client.create_channel") as mock_ch:
+            mock_channel = MagicMock()
+            mock_ch.return_value = mock_channel
+            with patch("opendecree.client.grpc.intercept_channel") as mock_intercept:
+                mock_intercept.return_value = mock_channel
+                opendecree.ConfigClient("localhost:9090", subject="s", interceptors=[custom])
+        args = mock_intercept.call_args[0]
+        # args[0] is the channel; args[1:] are interceptors in order
+        interceptors_in_order = args[1:]
+        assert interceptors_in_order[0] is custom
+        assert isinstance(interceptors_in_order[1], AuthInterceptor)
+
+    def test_custom_interceptors_no_auth(self):
+        """Custom interceptors work even when no auth metadata is set."""
+        custom = MagicMock(spec=grpc.UnaryUnaryClientInterceptor)
+        with patch("opendecree.client.create_channel") as mock_ch:
+            mock_channel = MagicMock()
+            mock_ch.return_value = mock_channel
+            with patch("opendecree.client.grpc.intercept_channel") as mock_intercept:
+                mock_intercept.return_value = mock_channel
+                opendecree.ConfigClient("localhost:9090", role="", interceptors=[custom])
+        args = mock_intercept.call_args[0]
+        assert args[1] is custom
