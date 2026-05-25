@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from packaging.version import Version
 
 from opendecree._compat import (
     _parse_version,
@@ -18,15 +19,25 @@ from opendecree.types import ServerVersion
 
 
 def test_parse_semver():
-    assert _parse_version("0.3.1") == (0, 3, 1)
+    assert _parse_version("0.3.1") == Version("0.3.1")
 
 
 def test_parse_with_v_prefix():
-    assert _parse_version("v1.2.3") == (1, 2, 3)
+    assert _parse_version("v1.2.3") == Version("1.2.3")
 
 
 def test_parse_major_only():
-    assert _parse_version("2") == (2,)
+    assert _parse_version("2") == Version("2")
+
+
+def test_parse_prerelease():
+    assert _parse_version("0.3.0-rc1") == Version("0.3.0rc1")
+
+
+def test_parse_local_version():
+    v = _parse_version("v0.3.0+sha123")
+    assert v is not None
+    assert v == Version("0.3.0+sha123")
 
 
 def test_parse_dev():
@@ -41,34 +52,37 @@ def test_parse_empty():
 
 
 def test_satisfies_gte():
-    assert _satisfies((0, 3, 1), ">=0.3.0") is True
-    assert _satisfies((0, 3, 0), ">=0.3.0") is True
-    assert _satisfies((0, 2, 9), ">=0.3.0") is False
+    assert _satisfies(Version("0.3.1"), ">=0.3.0") is True
+    assert _satisfies(Version("0.3.0"), ">=0.3.0") is True
+    assert _satisfies(Version("0.2.9"), ">=0.3.0") is False
 
 
 def test_satisfies_lt():
-    assert _satisfies((0, 9, 0), "<1.0.0") is True
-    assert _satisfies((1, 0, 0), "<1.0.0") is False
+    assert _satisfies(Version("0.9.0"), "<1.0.0") is True
+    assert _satisfies(Version("1.0.0"), "<1.0.0") is False
 
 
 def test_satisfies_eq():
-    assert _satisfies((1, 2, 3), "==1.2.3") is True
-    assert _satisfies((1, 2, 4), "==1.2.3") is False
+    assert _satisfies(Version("1.2.3"), "==1.2.3") is True
+    assert _satisfies(Version("1.2.4"), "==1.2.3") is False
 
 
 def test_satisfies_neq():
-    assert _satisfies((1, 2, 4), "!=1.2.3") is True
-    assert _satisfies((1, 2, 3), "!=1.2.3") is False
+    assert _satisfies(Version("1.2.4"), "!=1.2.3") is True
+    assert _satisfies(Version("1.2.3"), "!=1.2.3") is False
 
 
-def test_satisfies_padding():
-    """Shorter version tuples are padded with zeros."""
-    assert _satisfies((1,), ">=1.0.0") is True
-    assert _satisfies((1,), "<2.0.0") is True
+def test_satisfies_short_version():
+    assert _satisfies(Version("1"), ">=1.0.0") is True
+    assert _satisfies(Version("1"), "<2.0.0") is True
+
+
+def test_satisfies_prerelease_lt_release():
+    assert _satisfies(Version("0.3.0rc1"), ">=0.3.0") is False
 
 
 def test_satisfies_invalid_constraint():
-    assert _satisfies((1, 0, 0), "garbage") is True
+    assert _satisfies(Version("1.0.0"), "garbage") is True
 
 
 # --- check_version_compatible ---
