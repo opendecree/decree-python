@@ -61,14 +61,15 @@ with ConfigClient("localhost:9090", subject="myapp") as client:
 
 ```python
 with ConfigClient("localhost:9090", subject="myapp") as client:
-    with client.watch("tenant-id") as watcher:
-        fee = watcher.field("payments.fee", float, default=0.01)
+    watcher = client.watch("tenant-id")
+    fee = watcher.field("payments.fee", float, default=0.01)
 
+    @fee.on_change
+    def on_fee_change(old: float, new: float):
+        print(f"Fee changed: {old} -> {new}")
+
+    with watcher:
         print(fee.value)  # current value, always fresh
-
-        @fee.on_change
-        def on_fee_change(old: float, new: float):
-            print(f"Fee changed: {old} -> {new}")
 ```
 
 See [Watching](watching.md) for more patterns.

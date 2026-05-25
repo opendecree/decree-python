@@ -30,10 +30,11 @@ Same constructor options as `ConfigClient` — see [Configuration](configuration
 from opendecree import AsyncConfigClient
 
 async with AsyncConfigClient("localhost:9090", subject="myapp") as client:
-    async with client.watch("tenant-id") as watcher:
-        fee = watcher.field("payments.fee", float, default=0.01)
-        enabled = watcher.field("payments.enabled", bool, default=False)
+    watcher = client.watch("tenant-id")
+    fee = watcher.field("payments.fee", float, default=0.01)
+    enabled = watcher.field("payments.enabled", bool, default=False)
 
+    async with watcher:
         # .value works the same
         print(fee.value)
 
@@ -47,9 +48,10 @@ async with AsyncConfigClient("localhost:9090", subject="myapp") as client:
 Use `async for` instead of `for`:
 
 ```python
-async with client.watch("tenant-id") as watcher:
-    fee = watcher.field("payments.fee", float, default=0.01)
+watcher = client.watch("tenant-id")
+fee = watcher.field("payments.fee", float, default=0.01)
 
+async with watcher:
     async for change in fee.changes():
         print(f"{change.old_value} -> {change.new_value}")
 ```
