@@ -63,6 +63,37 @@ class TestCreateChannel:
                 mock_insecure.assert_called_once()
                 mock_comp.assert_not_called()
 
+    def test_message_size_options_included_when_set(self):
+        with patch("opendecree._channel.grpc.insecure_channel") as mock:
+            mock.return_value = MagicMock()
+            create_channel(
+                "localhost:9090",
+                max_send_message_length=16 * 1024 * 1024,
+                max_recv_message_length=32 * 1024 * 1024,
+            )
+            _, kwargs = mock.call_args
+            opts = dict(kwargs["options"])
+            assert opts["grpc.max_send_message_length"] == 16 * 1024 * 1024
+            assert opts["grpc.max_receive_message_length"] == 32 * 1024 * 1024
+
+    def test_message_size_options_absent_by_default(self):
+        with patch("opendecree._channel.grpc.insecure_channel") as mock:
+            mock.return_value = MagicMock()
+            create_channel("localhost:9090")
+            _, kwargs = mock.call_args
+            keys = [k for k, _ in kwargs["options"]]
+            assert "grpc.max_send_message_length" not in keys
+            assert "grpc.max_receive_message_length" not in keys
+
+    def test_keepalive_override(self):
+        with patch("opendecree._channel.grpc.insecure_channel") as mock:
+            mock.return_value = MagicMock()
+            create_channel("localhost:9090", keepalive_time_ms=60000, keepalive_timeout_ms=5000)
+            _, kwargs = mock.call_args
+            opts = dict(kwargs["options"])
+            assert opts["grpc.keepalive_time_ms"] == 60000
+            assert opts["grpc.keepalive_timeout_ms"] == 5000
+
 
 class TestCreateAioChannel:
     def test_insecure(self):
@@ -119,3 +150,34 @@ class TestCreateAioChannel:
                 create_aio_channel("localhost:9090", insecure=True, token="tok")
                 mock_insecure.assert_called_once()
                 mock_comp.assert_not_called()
+
+    def test_message_size_options_included_when_set(self):
+        with patch("opendecree._channel.grpc.aio.insecure_channel") as mock:
+            mock.return_value = MagicMock()
+            create_aio_channel(
+                "localhost:9090",
+                max_send_message_length=16 * 1024 * 1024,
+                max_recv_message_length=32 * 1024 * 1024,
+            )
+            _, kwargs = mock.call_args
+            opts = dict(kwargs["options"])
+            assert opts["grpc.max_send_message_length"] == 16 * 1024 * 1024
+            assert opts["grpc.max_receive_message_length"] == 32 * 1024 * 1024
+
+    def test_message_size_options_absent_by_default(self):
+        with patch("opendecree._channel.grpc.aio.insecure_channel") as mock:
+            mock.return_value = MagicMock()
+            create_aio_channel("localhost:9090")
+            _, kwargs = mock.call_args
+            keys = [k for k, _ in kwargs["options"]]
+            assert "grpc.max_send_message_length" not in keys
+            assert "grpc.max_receive_message_length" not in keys
+
+    def test_keepalive_override(self):
+        with patch("opendecree._channel.grpc.aio.insecure_channel") as mock:
+            mock.return_value = MagicMock()
+            create_aio_channel("localhost:9090", keepalive_time_ms=60000, keepalive_timeout_ms=5000)
+            _, kwargs = mock.call_args
+            opts = dict(kwargs["options"])
+            assert opts["grpc.keepalive_time_ms"] == 60000
+            assert opts["grpc.keepalive_timeout_ms"] == 5000
