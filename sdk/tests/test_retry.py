@@ -64,6 +64,18 @@ def test_retry_config_defaults():
     assert cfg.multiplier == 2.0
     assert grpc.StatusCode.UNAVAILABLE in cfg.retryable_codes
     assert grpc.StatusCode.DEADLINE_EXCEEDED in cfg.retryable_codes
+    assert grpc.StatusCode.RESOURCE_EXHAUSTED in cfg.retryable_codes
+
+
+def test_retry_on_resource_exhausted():
+    err = FakeRpcError(grpc.StatusCode.RESOURCE_EXHAUSTED)
+    fn = MagicMock(side_effect=[err, "ok"])
+
+    with patch("opendecree._retry.time.sleep"):
+        result = with_retry(RetryConfig(max_attempts=3), fn)
+
+    assert result == "ok"
+    assert fn.call_count == 2
 
 
 def test_write_safe_config_strips_deadline_exceeded():

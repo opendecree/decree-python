@@ -42,6 +42,7 @@ class RetryConfig:
         default=(
             grpc.StatusCode.UNAVAILABLE,
             grpc.StatusCode.DEADLINE_EXCEEDED,
+            grpc.StatusCode.RESOURCE_EXHAUSTED,
         )
     )
     total_timeout: float | None = None
