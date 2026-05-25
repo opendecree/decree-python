@@ -121,6 +121,49 @@ class TestWatchedField:
         f._update("2", change)
         assert f.value == 2
 
+    def test_on_callback_error_hook_is_called(self):
+        errors: list[Exception] = []
+        f = WatchedField("x", int, 0, on_callback_error=errors.append)
+        f._load_initial("1")
+
+        @f.on_change
+        def bad_cb(old: int, new: int) -> None:
+            raise ValueError("boom")
+
+        from opendecree.types import Change
+
+        change = Change(field_path="x", old_value="1", new_value="2", version=1)
+        f._update("2", change)
+
+        assert len(errors) == 1
+        assert isinstance(errors[0], ValueError)
+        assert str(errors[0]) == "boom"
+        assert f.value == 2
+
+    def test_on_callback_error_hook_via_field_method(self):
+        errors: list[Exception] = []
+        stub = MagicMock()
+        pb2 = MagicMock()
+        mock_resp = MagicMock()
+        mock_resp.config.values = []
+        stub.GetConfig.return_value = mock_resp
+
+        w = ConfigWatcher(stub, pb2, "t1", timeout=5.0)
+        f = w.field("x", int, default=0, on_callback_error=errors.append)
+        f._load_initial("1")
+
+        @f.on_change
+        def bad_cb(old: int, new: int) -> None:
+            raise RuntimeError("fail")
+
+        from opendecree.types import Change
+
+        change = Change(field_path="x", old_value="1", new_value="2", version=1)
+        f._update("2", change)
+
+        assert len(errors) == 1
+        assert isinstance(errors[0], RuntimeError)
+
 
 # --- ConfigWatcher unit tests ---
 
