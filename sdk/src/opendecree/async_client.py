@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import warnings
 from datetime import timedelta
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Any, overload
 
 if TYPE_CHECKING:
     from opendecree.async_watcher import AsyncConfigWatcher
@@ -54,7 +54,7 @@ class AsyncConfigClient:
         timeout: float = 10.0,
         retry: RetryConfig | None = None,
         check_version: bool = False,
-        interceptors: list | None = None,
+        interceptors: list[Any] | None = None,
     ) -> None:
         """Create a new AsyncConfigClient.
 

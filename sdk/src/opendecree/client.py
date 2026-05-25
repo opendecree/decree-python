@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import warnings
 from datetime import timedelta
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Any, overload
 
 if TYPE_CHECKING:
     from opendecree.watcher import ConfigWatcher
@@ -57,7 +57,7 @@ class ConfigClient:
         timeout: float = 10.0,
         retry: RetryConfig | None = None,
         check_version: bool = False,
-        interceptors: list | None = None,
+        interceptors: list[Any] | None = None,
     ) -> None:
         """Create a new ConfigClient.
 
@@ -110,7 +110,7 @@ class ConfigClient:
             subject=subject, role=role, tenant_id=tenant_id, token=metadata_token
         )
         # User interceptors are outermost; auth interceptor runs inside them.
-        all_interceptors: list = list(interceptors) if interceptors else []
+        all_interceptors: list[Any] = list(interceptors) if interceptors else []
         if metadata:
             all_interceptors.append(AuthInterceptor(metadata))
 

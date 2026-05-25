@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import grpc
 
 _DEFAULT_KEEPALIVE_TIME_MS = 30000
@@ -99,7 +101,7 @@ def create_aio_channel(
     insecure: bool = True,
     credentials: grpc.ChannelCredentials | None = None,
     token: str | None = None,
-    interceptors: list | None = None,
+    interceptors: list[Any] | None = None,
     max_send_message_length: int | None = None,
     max_recv_message_length: int | None = None,
     keepalive_time_ms: int = _DEFAULT_KEEPALIVE_TIME_MS,
