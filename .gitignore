@@ -6,6 +6,8 @@ __pycache__/
 *.egg
 dist/
 build/
+!build/Dockerfile.tools
+!build/*.py
 *.whl
 
 # Virtual environments

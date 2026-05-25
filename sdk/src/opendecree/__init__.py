@@ -4,7 +4,8 @@ from importlib.metadata import version as _pkg_version
 
 __version__ = _pkg_version("opendecree")
 
-SUPPORTED_SERVER_VERSION = ">=0.3.0,<1.0.0"
+from opendecree._constants import SUPPORTED_SERVER_VERSION
+
 PROTO_VERSION = "v1"
 
 from opendecree._convert import URL
