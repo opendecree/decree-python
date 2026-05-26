@@ -51,6 +51,9 @@ with ConfigClient("localhost:9090", subject="myapp") as client:
             print(f"Fee changed: {old} -> {new}")
 ```
 
+> **Fork safety:** gRPC channels are not fork-safe. Create `ConfigClient` (and start any watcher)
+> *after* forking — not before. See [Fork safety](sdk/docs/watching.md#fork-safety) for details.
+
 ## Async
 
 ```python
