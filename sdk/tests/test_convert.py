@@ -276,3 +276,26 @@ def test_typed_value_to_string_time():
     tv = types_pb2.TypedValue(time_value=t)
     result = typed_value_to_string(tv)
     assert "2023" in result  # RFC 3339 format
+
+
+def test_typed_value_to_string_unknown_kind():
+    """The case _ fallback returns str(val) for unrecognised kind strings."""
+    from unittest.mock import patch
+
+    from opendecree._convert import typed_value_to_string
+    from opendecree._generated.centralconfig.v1 import types_pb2
+
+    class FakeTV:
+        def WhichOneof(self, name):  # noqa: N802
+            return "exotic_kind"
+
+        def __getattr__(self, name):
+            return "exotic_value"
+
+    fake_instance = FakeTV()
+
+    # Patch the TypedValue class inside the generated module so isinstance passes.
+    with patch.object(types_pb2, "TypedValue", FakeTV):
+        result = typed_value_to_string(fake_instance)
+
+    assert result == "exotic_value"

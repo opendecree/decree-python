@@ -196,6 +196,30 @@ class TestAsyncWatchedField:
         assert _DEFAULT_MAX_QUEUE_SIZE == 1024
 
     @pytest.mark.asyncio
+    async def test_changes_spurious_wake_skipped(self):
+        f = AsyncWatchedField("x", str, "")
+        f._load_initial("a")
+
+        # Set event without putting anything in the queue → spurious wake
+        f._queue_event.set()
+
+        async def _collect_first():
+            async for c in f.changes():
+                return c
+
+        task = asyncio.create_task(_collect_first())
+        # Yield twice so the task can process the spurious wake (clears event, loops back)
+        await asyncio.sleep(0)
+        await asyncio.sleep(0)
+
+        # Now deliver a real change + stop
+        change = Change(field_path="x", old_value="a", new_value="b", version=1)
+        f._update("b", change)
+
+        result = await asyncio.wait_for(task, timeout=2.0)
+        assert result.new_value == "b"
+
+    @pytest.mark.asyncio
     async def test_changes_iterator_after_overflow(self):
         f = AsyncWatchedField("x", str, "", max_queue_size=2)
         for i in range(4):
@@ -409,6 +433,81 @@ class TestAsyncConfigWatcher:
         stub.Subscribe.assert_called_once()
         _, sub_kwargs = stub.Subscribe.call_args
         assert sub_kwargs.get("metadata") == auth_meta
+
+    @pytest.mark.asyncio
+    async def test_processes_stream_response(self):
+        from opendecree._generated.centralconfig.v1 import types_pb2
+
+        w = self._make_watcher()
+        fee = w.field("fee", float, default=0.0)
+
+        response = MagicMock()
+        response.change.field_path = "fee"
+        response.change.HasField.side_effect = lambda name: name in ("old_value", "new_value")
+        response.change.old_value = types_pb2.TypedValue(string_value="0.0")
+        response.change.new_value = types_pb2.TypedValue(string_value="1.5")
+        response.change.version = 1
+        response.change.changed_by = ""
+
+        async def stream_with_one_response():
+            yield response
+            # Stream ends normally (server closed)
+
+        w._stub.Subscribe = MagicMock(return_value=stream_with_one_response())
+
+        await w.start()
+        await asyncio.sleep(0.2)
+        await w.stop()
+
+        assert fee.value == pytest.approx(1.5)
+
+    @pytest.mark.asyncio
+    async def test_stream_loop_returns_when_stopped_during_iteration(self):
+        from opendecree._generated.centralconfig.v1 import types_pb2
+
+        w = self._make_watcher()
+        w.field("fee", float, default=0.0)
+
+        response = MagicMock()
+        response.change.field_path = "fee"
+        response.change.HasField.side_effect = lambda name: name in ("old_value", "new_value")
+        response.change.old_value = types_pb2.TypedValue(string_value="0.0")
+        response.change.new_value = types_pb2.TypedValue(string_value="1.5")
+        response.change.version = 1
+        response.change.changed_by = ""
+
+        async def stream_already_stopped():
+            w._stopped = True  # mark stopped before the loop body runs
+            yield response
+
+        w._stub.Subscribe = MagicMock(return_value=stream_already_stopped())
+
+        await w.start()
+        await asyncio.sleep(0.2)
+
+        assert w._task is not None
+        assert w._task.done()
+        await w.stop()
+
+    @pytest.mark.asyncio
+    async def test_stream_aiorpc_error_while_stopped_exits_cleanly(self):
+        w = self._make_watcher()
+        w.field("fee", float, default=0.0)
+
+        async def error_after_stop():
+            w._stopped = True  # mark stopped before raising
+            raise FakeRpcError(grpc.StatusCode.UNAVAILABLE, "gone")
+            yield  # makes it an async generator
+
+        w._stub.Subscribe = MagicMock(return_value=error_after_stop())
+
+        await w.start()
+        await asyncio.sleep(0.2)
+
+        # Task should have exited cleanly (stopped=True path)
+        assert w._task is not None
+        assert w._task.done()
+        await w.stop()
 
     @pytest.mark.asyncio
     async def test_task_name_sanitizes_control_chars(self):

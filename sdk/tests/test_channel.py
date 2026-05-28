@@ -181,3 +181,25 @@ class TestCreateAioChannel:
             opts = dict(kwargs["options"])
             assert opts["grpc.keepalive_time_ms"] == 60000
             assert opts["grpc.keepalive_timeout_ms"] == 5000
+
+
+def test_token_call_credentials_callback_injects_bearer():
+    from opendecree._channel import _token_call_credentials
+
+    captured = []
+
+    def fake_metadata_call_creds(fn):
+        captured.append(fn)
+        return MagicMock(spec=grpc.CallCredentials)
+
+    with patch(
+        "opendecree._channel.grpc.metadata_call_credentials",
+        side_effect=fake_metadata_call_creds,
+    ):
+        _token_call_credentials("secret-tok")
+
+    # Invoke the captured inner callback directly
+    received = []
+    captured[0](None, lambda meta, err: received.append((meta, err)))
+    assert received[0][0] == [("authorization", "Bearer secret-tok")]
+    assert received[0][1] is None

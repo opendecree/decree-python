@@ -224,3 +224,55 @@ async def test_async_deadline_exhausted_raises_immediately():
                 await async_with_retry(RetryConfig(max_attempts=3, total_timeout=0.1), fn)
 
     assert slept == []
+
+
+@pytest.mark.asyncio
+async def test_async_deadline_already_passed_before_second_attempt():
+    """Async loop-top deadline check stops further attempts once budget is exhausted."""
+    err = FakeRpcError(grpc.StatusCode.UNAVAILABLE)
+    call_count = 0
+
+    async def fn() -> str:
+        nonlocal call_count
+        call_count += 1
+        raise err
+
+    slept: list[float] = []
+
+    async def fake_sleep(s: float) -> None:
+        slept.append(s)
+
+    with patch("opendecree._retry.asyncio.sleep", side_effect=fake_sleep):
+        # monotonic: [deadline_start, loop-top-0 ok, remaining ok, loop-top-1 expired]
+        with patch("opendecree._retry.time.monotonic", side_effect=[0.0, 0.0, 0.05, 0.2]):
+            with pytest.raises(grpc.aio.AioRpcError):
+                await async_with_retry(RetryConfig(max_attempts=3, total_timeout=0.1), fn)
+
+    assert call_count == 1  # second attempt blocked by loop-top break
+
+
+@pytest.mark.asyncio
+async def test_async_deadline_clips_sleep():
+    """Async sleep is clipped to remaining budget so total wall time stays bounded."""
+    err = FakeRpcError(grpc.StatusCode.UNAVAILABLE)
+    call_count = 0
+
+    async def fn() -> str:
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            raise err
+        return "ok"
+
+    slept: list[float] = []
+
+    async def fake_sleep(s: float) -> None:
+        slept.append(s)
+
+    with patch("opendecree._retry.asyncio.sleep", side_effect=fake_sleep):
+        # monotonic: [deadline_start=0.0, loop-top-0=0.0, remaining-check=0.05, loop-top-1=0.05]
+        with patch("opendecree._retry.time.monotonic", side_effect=[0.0, 0.0, 0.05, 0.05]):
+            result = await async_with_retry(RetryConfig(max_attempts=3, total_timeout=0.1), fn)
+
+    assert result == "ok"
+    assert slept[0] <= 0.05 + 1e-9  # sleep clipped to remaining budget

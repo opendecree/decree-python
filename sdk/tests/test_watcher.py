@@ -229,6 +229,38 @@ class TestWatchedField:
         assert f._max_queue_size == _DEFAULT_MAX_QUEUE_SIZE
         assert _DEFAULT_MAX_QUEUE_SIZE == 1024
 
+    def test_changes_blocks_until_change_arrives(self):
+        import threading
+
+        f = WatchedField("x", str, "")
+        f._load_initial("a")
+
+        results: list = []
+        done = threading.Event()
+
+        def consume():
+            for c in f.changes():
+                results.append(c)
+                break
+            done.set()
+
+        t = threading.Thread(target=consume, daemon=True)
+        t.start()
+
+        time.sleep(0.05)  # let thread enter the wait
+
+        from opendecree.types import Change
+
+        change = Change(field_path="x", old_value="a", new_value="b", version=1)
+        f._update("b", change)
+        f._stop()
+
+        done.wait(timeout=2.0)
+        t.join(timeout=2.0)
+
+        assert len(results) == 1
+        assert results[0].new_value == "b"
+
     def test_changes_iterator_after_overflow(self):
         from opendecree.types import Change
 
@@ -499,3 +531,106 @@ class TestConfigWatcher:
         assert "\x1f" not in w._thread.name
         assert "tenantevil" in w._thread.name
         w.stop()
+
+    def test_processes_stream_response(self):
+        from opendecree._generated.centralconfig.v1 import types_pb2
+
+        stub = MagicMock()
+        pb2 = MagicMock()
+        mock_config_resp = MagicMock()
+        mock_config_resp.config.values = []
+        stub.GetConfig.return_value = mock_config_resp
+
+        w = ConfigWatcher(stub, pb2, "t1", timeout=5.0)
+        fee = w.field("fee", float, default=0.0)
+
+        response = MagicMock()
+        response.change.field_path = "fee"
+        response.change.HasField.side_effect = lambda name: name in ("old_value", "new_value")
+        response.change.old_value = types_pb2.TypedValue(string_value="0.0")
+        response.change.new_value = types_pb2.TypedValue(string_value="1.5")
+        response.change.version = 1
+        response.change.changed_by = ""
+
+        stub.Subscribe.return_value = iter([response])
+
+        w.start()
+        time.sleep(0.2)
+        w.stop()
+
+        assert fee.value == pytest.approx(1.5)
+
+    def test_stream_loop_returns_when_stopped_during_iteration(self):
+        stub = MagicMock()
+        pb2 = MagicMock()
+        mock_config_resp = MagicMock()
+        mock_config_resp.config.values = []
+        stub.GetConfig.return_value = mock_config_resp
+
+        w = ConfigWatcher(stub, pb2, "t1", timeout=5.0)
+        w.field("fee", float, default=0.0)
+
+        class StopThenYieldStream:
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                w._stop_event.set()  # mark stopped before the loop body runs
+                response = MagicMock()
+                response.change.field_path = "fee"
+                response.change.HasField.side_effect = lambda name: (
+                    name
+                    in (
+                        "old_value",
+                        "new_value",
+                    )
+                )
+                from opendecree._generated.centralconfig.v1 import types_pb2
+
+                response.change.old_value = types_pb2.TypedValue(string_value="0.0")
+                response.change.new_value = types_pb2.TypedValue(string_value="1.5")
+                response.change.version = 1
+                response.change.changed_by = ""
+                return response
+
+            def cancel(self):
+                pass
+
+        stub.Subscribe.return_value = StopThenYieldStream()
+
+        w.start()
+        time.sleep(0.2)
+        w.stop()
+
+        # Thread exited via early return on line 248
+        assert w._thread is None
+
+    def test_stream_rpc_error_while_stopped_exits_cleanly(self):
+        stub = MagicMock()
+        pb2 = MagicMock()
+        mock_config_resp = MagicMock()
+        mock_config_resp.config.values = []
+        stub.GetConfig.return_value = mock_config_resp
+
+        w = ConfigWatcher(stub, pb2, "t1", timeout=5.0)
+        w.field("fee", float, default=0.0)
+
+        class ErrorStream:
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                w._stop_event.set()  # mark stopped before raising
+                raise FakeRpcError(grpc.StatusCode.UNAVAILABLE, "gone")
+
+            def cancel(self):
+                pass
+
+        stub.Subscribe.return_value = ErrorStream()
+
+        w.start()
+        time.sleep(0.2)
+        w.stop()
+
+        # Thread should have exited on line 265 return path
+        assert w._thread is None
