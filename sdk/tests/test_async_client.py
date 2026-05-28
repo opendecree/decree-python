@@ -317,3 +317,68 @@ class TestAsyncConfigClientUnit:
             mock_ch.return_value = MagicMock()
             AsyncConfigClient("localhost:9090", interceptors=[a, b])
         assert mock_ch.call_args.kwargs["interceptors"] == [a, b]
+
+    def test_insecure_token_emits_warning(self):
+        import warnings
+
+        with patch("opendecree.async_client.create_aio_channel") as mock_ch:
+            mock_ch.return_value = MagicMock()
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always")
+                AsyncConfigClient("localhost:9090", insecure=True, token="tok")
+        assert len(w) == 1
+        assert issubclass(w[0].category, UserWarning)
+        assert "cleartext" in str(w[0].message)
+
+    @pytest.mark.asyncio
+    async def test_get_server_version(self):
+        client = self._make_client()
+        from opendecree.types import ServerVersion
+
+        sv = ServerVersion(version="0.2.0", commit="abc123")
+        with patch(
+            "opendecree.async_client.async_fetch_server_version",
+            new_callable=AsyncMock,
+            return_value=sv,
+        ) as mock_fetch:
+            result = await client.get_server_version()
+        assert result == sv
+        mock_fetch.assert_called_once()
+        # Second call uses cache — fetch not called again
+        with patch(
+            "opendecree.async_client.async_fetch_server_version",
+            new_callable=AsyncMock,
+        ) as mock_fetch2:
+            result2 = await client.get_server_version()
+        assert result2 == sv
+        mock_fetch2.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_check_version_true_triggers_compat_check_on_first_call(self):
+        with patch("opendecree.async_client.create_aio_channel") as mock_ch:
+            mock_ch.return_value = MagicMock()
+            client = AsyncConfigClient("localhost:9090", check_version=True)
+        client._stub = MagicMock()
+
+        from opendecree._generated.centralconfig.v1 import types_pb2
+
+        mock_resp = MagicMock()
+        mock_resp.value.HasField.return_value = True
+        mock_resp.value.value = types_pb2.TypedValue(string_value="hello")
+        client._stub.GetField = AsyncMock(return_value=mock_resp)
+
+        from opendecree.types import ServerVersion
+
+        sv = ServerVersion(version="0.2.0", commit="abc")
+        with patch(
+            "opendecree.async_client.async_fetch_server_version",
+            new_callable=AsyncMock,
+            return_value=sv,
+        ):
+            with patch("opendecree.async_client.check_version_compatible") as mock_check:
+                result = await client.get("t1", "some.field")
+
+        mock_check.assert_called_once_with("0.2.0")
+        assert result == "hello"
+        # version_checked flag prevents second check
+        assert client._version_checked is True
