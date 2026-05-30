@@ -7,6 +7,7 @@ from collections.abc import Callable
 from typing import Generic, TypeVar
 
 from opendecree._convert import convert_value
+from opendecree.errors import TypeMismatchError
 
 T = TypeVar("T")
 
@@ -57,8 +58,18 @@ class _WatchedFieldBase(Generic[T]):
         """Set _value/_is_set from a raw string. Returns (old, new). Caller must lock if needed."""
         old = self._value
         if raw_value is not None:
-            self._value = convert_value(raw_value, self._type)  # type: ignore[assignment]
-            self._is_set = True
+            try:
+                self._value = convert_value(raw_value, self._type)  # type: ignore[assignment]
+                self._is_set = True
+            except TypeMismatchError:
+                _logger.warning(
+                    "Type mismatch for field %r: cannot convert %r to %s, using default",
+                    self._path,
+                    raw_value,
+                    self._type.__name__,
+                )
+                self._value = self._default
+                self._is_set = False
         else:
             self._value = self._default
             self._is_set = False
