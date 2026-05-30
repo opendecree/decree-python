@@ -91,6 +91,26 @@ class TestAsyncWatchedField:
         f = AsyncWatchedField("payments.fee", float, 0.01)
         assert "payments.fee" in repr(f)
 
+    def test_load_initial_type_flip_falls_back_to_default(self):
+        f = AsyncWatchedField("payments.fee", float, 0.01)
+        f._load_initial("not-a-number")
+        assert f.value == pytest.approx(0.01)
+        assert not f._is_set
+
+    def test_update_type_flip_falls_back_to_default(self):
+        f = AsyncWatchedField("payments.fee", float, 0.01)
+        f._load_initial("0.025")
+        assert f.value == pytest.approx(0.025)
+
+        change = Change(
+            field_path="payments.fee", old_value="0.025", new_value="not-a-number", version=2
+        )
+        f._update("not-a-number", change)
+
+        # Falls back to default on type mismatch, does not crash.
+        assert f.value == pytest.approx(0.01)
+        assert not f._is_set
+
     def test_callback_exception_is_logged(self):
         f = AsyncWatchedField("x", int, 0)
         f._load_initial("1")
@@ -347,6 +367,36 @@ class TestAsyncConfigWatcher:
 
         w._process_change(change)
         assert fee.value == 2.0
+
+    def test_type_flip_mid_stream_uses_default_and_continues(self):
+        """Type-flip mid-stream falls back to default and keeps the stream alive."""
+        from opendecree._generated.centralconfig.v1 import types_pb2
+
+        w = self._make_watcher()
+        fee = w.field("fee", float, default=0.01)
+        fee._load_initial("0.025")
+
+        bad_change = MagicMock()
+        bad_change.field_path = "fee"
+        bad_change.HasField.side_effect = lambda name: name in ("old_value", "new_value")
+        bad_change.old_value = types_pb2.TypedValue(string_value="0.025")
+        bad_change.new_value = types_pb2.TypedValue(string_value="not-a-number")
+        bad_change.version = 2
+        bad_change.changed_by = ""
+
+        w._process_change(bad_change)
+        assert fee.value == pytest.approx(0.01)
+
+        good_change = MagicMock()
+        good_change.field_path = "fee"
+        good_change.HasField.side_effect = lambda name: name in ("old_value", "new_value")
+        good_change.old_value = types_pb2.TypedValue(string_value="not-a-number")
+        good_change.new_value = types_pb2.TypedValue(string_value="0.1")
+        good_change.version = 3
+        good_change.changed_by = ""
+
+        w._process_change(good_change)
+        assert fee.value == pytest.approx(0.1)
 
     def test_process_change_unknown_field_ignored(self):
         w = self._make_watcher()
