@@ -55,6 +55,7 @@ class AsyncConfigClient:
         retry: RetryConfig | None = None,
         check_version: bool = False,
         interceptors: list[Any] | None = None,
+        otel: bool = False,
     ) -> None:
         """Create a new AsyncConfigClient.
 
@@ -80,6 +81,10 @@ class AsyncConfigClient:
             interceptors: Optional list of :class:`grpc.aio.ClientInterceptor`
                 instances to inject (e.g., for logging, tracing, or metrics).
                 Passed directly to the ``grpc.aio`` channel.
+            otel: When True, wire an OpenTelemetry gRPC client interceptor so
+                get/set/watch RPCs appear in your application traces. Requires
+                ``pip install 'opendecree[otel]'``. The OTel interceptor is
+                outermost, wrapping all other interceptors.
         """
         self._timeout = timeout
         self._retry = retry if retry is not None else RetryConfig()
@@ -105,12 +110,21 @@ class AsyncConfigClient:
         self._auth_metadata = _build_metadata(
             subject=subject, role=role, tenant_id=tenant_id, token=metadata_token
         )
+
+        # OTel interceptors are outermost; user interceptors follow.
+        all_interceptors: list[Any] = []
+        if otel:
+            from opendecree._otel import make_aio_interceptors
+
+            all_interceptors.extend(make_aio_interceptors())
+        all_interceptors.extend(interceptors or [])
+
         self._channel = create_aio_channel(
             target,
             insecure=insecure,
             credentials=credentials,
             token=channel_token,
-            interceptors=interceptors,
+            interceptors=all_interceptors or None,
         )
 
         cs_pb2, cs_grpc = ensure_stubs()

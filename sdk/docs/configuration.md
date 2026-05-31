@@ -21,6 +21,9 @@ ConfigClient(
     # Behavior
     timeout: float = 10.0,       # default RPC timeout in seconds
     retry: RetryConfig | None = RetryConfig(),  # retry config (None to disable)
+
+    # Observability
+    otel: bool = False,           # wire OTel gRPC interceptor (requires opendecree[otel])
 )
 ```
 
@@ -145,6 +148,33 @@ client.set(
 
 Use `idempotency_key` only when the write is genuinely safe to apply more than once — for example,
 setting a field to a known constant value.
+
+## OpenTelemetry instrumentation
+
+Pass `otel=True` to wire an OpenTelemetry gRPC interceptor. Get, set, and watch RPCs will appear as spans in your application traces.
+
+```python
+from opendecree import ConfigClient
+
+client = ConfigClient("localhost:9090", otel=True)
+```
+
+Requires the optional extra:
+
+```
+pip install 'opendecree[otel]'
+```
+
+The OTel interceptor is outermost — it wraps both user-supplied interceptors and the SDK's internal auth interceptor, so every outbound RPC is traced end-to-end. The same flag works on `AsyncConfigClient`:
+
+```python
+from opendecree import AsyncConfigClient
+
+async with AsyncConfigClient("localhost:9090", otel=True) as client:
+    val = await client.get("tenant-id", "payments.fee")
+```
+
+The watcher inherits the client's already-instrumented channel — no additional configuration needed.
 
 ## Timeouts
 
