@@ -28,6 +28,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+otel = [
+    "opentelemetry-instrumentation-grpc>=0.50b0",
+]
 dev = [
     "pytest>=9.0.3",
     "pytest-cov>=7.1.0",
@@ -78,6 +81,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "google.rpc.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "opentelemetry.*"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

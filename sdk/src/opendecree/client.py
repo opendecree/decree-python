@@ -58,6 +58,7 @@ class ConfigClient:
         retry: RetryConfig | None = None,
         check_version: bool = False,
         interceptors: list[Any] | None = None,
+        otel: bool = False,
     ) -> None:
         """Create a new ConfigClient.
 
@@ -86,6 +87,10 @@ class ConfigClient:
                 (e.g., for logging, tracing, or metrics). User-supplied
                 interceptors are applied outermost (before the SDK's internal
                 auth interceptor).
+            otel: When True, wire an OpenTelemetry gRPC client interceptor so
+                get/set/watch RPCs appear in your application traces. Requires
+                ``pip install 'opendecree[otel]'``. The OTel interceptor is
+                outermost, wrapping all other interceptors.
         """
         self._timeout = timeout
         self._retry = retry if retry is not None else RetryConfig()
@@ -109,8 +114,13 @@ class ConfigClient:
         metadata = _build_metadata(
             subject=subject, role=role, tenant_id=tenant_id, token=metadata_token
         )
-        # User interceptors are outermost; auth interceptor runs inside them.
-        all_interceptors: list[Any] = list(interceptors) if interceptors else []
+        # OTel → user interceptors → auth interceptor (outermost first).
+        all_interceptors: list[Any] = []
+        if otel:
+            from opendecree._otel import make_sync_interceptor
+
+            all_interceptors.append(make_sync_interceptor())
+        all_interceptors.extend(interceptors or [])
         if metadata:
             all_interceptors.append(AuthInterceptor(metadata))
 
