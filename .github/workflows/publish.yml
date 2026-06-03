@@ -15,7 +15,7 @@ jobs:
     environment: pypi
     permissions:
       id-token: write
-      contents: read
+      contents: write
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -27,3 +27,6 @@ jobs:
         with:
           packages-dir: sdk/dist/
           print-hash: true
+      - run: gh release create "${{ github.ref_name }}" --generate-notes sdk/dist/*.whl sdk/dist/*.tar.gz
+        env:
+          GH_TOKEN: ${{ github.token }}
