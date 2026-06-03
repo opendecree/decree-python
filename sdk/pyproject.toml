@@ -31,6 +31,10 @@ dependencies = [
 otel = [
     "opentelemetry-instrumentation-grpc>=0.50b0",
 ]
+docs = [
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.27",
+]
 dev = [
     "pytest>=9.0.3",
     "pytest-cov>=7.1.0",
@@ -44,7 +48,7 @@ dev = [
 
 [project.urls]
 Homepage = "https://github.com/opendecree/decree-python"
-Documentation = "https://github.com/opendecree/decree"
+Documentation = "https://opendecree.github.io/decree-python"
 Repository = "https://github.com/opendecree/decree-python"
 Issues = "https://github.com/opendecree/decree-python/issues"
 
