@@ -1,0 +1,14 @@
+{
+  "name": "OpenDecree Python SDK",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "charliermarsh.ruff",
+        "ms-python.mypy-type-checker"
+      ]
+    }
+  },
+  "postCreateCommand": "cd sdk && pip install -e '.[dev]'"
+}
