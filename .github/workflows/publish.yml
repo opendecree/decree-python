@@ -27,6 +27,7 @@ jobs:
         with:
           packages-dir: sdk/dist/
           print-hash: true
+          attestations: true
       - run: gh release create "${{ github.ref_name }}" --generate-notes sdk/dist/*.whl sdk/dist/*.tar.gz
         env:
           GH_TOKEN: ${{ github.token }}

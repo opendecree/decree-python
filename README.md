@@ -85,6 +85,20 @@ Runnable examples in the [`examples/`](examples/) directory:
 
 For detailed concepts (schemas, typed values, versioning, auth), see the [main OpenDecree docs](https://github.com/opendecree/decree).
 
+## Supply Chain Security
+
+Each release wheel is signed with [Sigstore](https://www.sigstore.dev/) via the GitHub Actions
+OIDC identity. Attestations are visible on the [PyPI project page](https://pypi.org/project/opendecree/).
+
+To verify a downloaded wheel locally:
+
+```bash
+pip download opendecree --no-deps
+gh attestation verify opendecree-*.whl --repo opendecree/decree-python
+```
+
+> See [decree#16](https://github.com/opendecree/decree/issues/16) for the org-wide attestation plan.
+
 ## Requirements
 
 - Python 3.11+
