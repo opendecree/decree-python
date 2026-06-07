@@ -204,16 +204,10 @@ All exceptions inherit from `DecreeError`:
 
 ## Return types
 
-All return types are frozen dataclasses:
+`get_all()` returns a plain `dict[str, str]` mapping field paths to their string
+values — not a dataclass. The other typed return values are frozen dataclasses:
 
 ```python
-@dataclass(frozen=True, slots=True)
-class ConfigValue:
-    field_path: str
-    value: str
-    checksum: str
-    description: str
-
 @dataclass(frozen=True, slots=True)
 class Change:
     field_path: str
@@ -221,4 +215,9 @@ class Change:
     new_value: str | None
     version: int
     changed_by: str
+
+@dataclass(frozen=True, slots=True)
+class ServerVersion:
+    version: str
+    commit: str
 ```
