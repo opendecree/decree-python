@@ -22,7 +22,7 @@ def main() -> None:
     # Use the decree CLI to seed — it handles schema creation, tenant
     # creation, and config import in one command.
     result = subprocess.run(
-        ["decree", "seed", "--server", addr, str(seed_file)],
+        ["decree", "seed", "--server", addr, "--insecure", str(seed_file)],
         capture_output=True,
         text=True,
     )
