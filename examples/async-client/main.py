@@ -14,7 +14,7 @@ import asyncio
 from datetime import timedelta
 from pathlib import Path
 
-from opendecree import AsyncConfigClient
+from opendecree import AsyncConfigClient, FieldUpdate
 
 
 async def main() -> None:
@@ -49,10 +49,13 @@ async def main() -> None:
         print(f"  app.debug:         {debug}")
         print(f"  server.rate_limit: {rate_limit}")
 
-        # Atomic multi-write.
+        # Atomic multi-write — each update is a FieldUpdate, not a plain dict.
         await client.set_many(
             tenant_id,
-            {"app.debug": "true", "server.rate_limit": "200"},
+            [
+                FieldUpdate("app.debug", "true"),
+                FieldUpdate("server.rate_limit", "200"),
+            ],
             description="async example update",
         )
         print("\nUpdated app.debug=true, server.rate_limit=200")

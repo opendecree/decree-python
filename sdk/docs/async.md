@@ -5,7 +5,7 @@ The SDK provides async equivalents for all sync APIs, built on `grpc.aio`.
 ## AsyncConfigClient
 
 ```python
-from opendecree import AsyncConfigClient
+from opendecree import AsyncConfigClient, FieldUpdate
 
 async with AsyncConfigClient("localhost:9090", subject="myapp") as client:
     # Typed gets (same overload pattern as sync)
@@ -18,9 +18,15 @@ async with AsyncConfigClient("localhost:9090", subject="myapp") as client:
 
     # Writes
     await client.set("tenant-id", "payments.fee", "0.5%")
-    await client.set_many("tenant-id", {"a": "1", "b": "2"})
+    await client.set_many(
+        "tenant-id",
+        [FieldUpdate("payments.fee", "0.5%"), FieldUpdate("payments.currency", "USD")],
+    )
     await client.set_null("tenant-id", "payments.fee")
 ```
+
+See [Bulk writes](quickstart.md#bulk-writes) for the full `FieldUpdate` reference,
+including `expected_checksum` and `value_description`.
 
 Same constructor options as `ConfigClient` — see [Configuration](configuration.md).
 

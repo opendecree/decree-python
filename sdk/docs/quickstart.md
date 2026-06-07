@@ -50,11 +50,54 @@ Supported types: `str` (default), `int`, `float`, `bool`, `timedelta`.
 with ConfigClient("localhost:9090", subject="myapp") as client:
     client.set("tenant-id", "payments.fee", "0.5%")
 
-    # Bulk writes
-    client.set_many("tenant-id", {"a": "1", "b": "2"}, description="batch update")
-
     # Set to null
     client.set_null("tenant-id", "payments.fee")
+```
+
+## Bulk writes
+
+Use `set_many()` to atomically update several fields in one request. Each
+update is a `FieldUpdate`, not a plain `dict` — the server applies all of them
+or none:
+
+```python
+from opendecree import FieldUpdate
+
+with ConfigClient("localhost:9090", subject="myapp") as client:
+    client.set_many(
+        "tenant-id",
+        [
+            FieldUpdate("payments.fee", "0.5%"),
+            FieldUpdate("payments.currency", "USD"),
+        ],
+        description="batch update",
+    )
+```
+
+`FieldUpdate` fields:
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `field_path` | Yes | Dot-separated field path (e.g., `"payments.fee"`). |
+| `value` | Yes | The value as a string. |
+| `expected_checksum` | No | When set, the server rejects the write if the current value's checksum does not match — use this for optimistic concurrency control. |
+| `value_description` | No | Optional description stored with this specific value. |
+
+```python
+with ConfigClient("localhost:9090", subject="myapp") as client:
+    client.set_many(
+        "tenant-id",
+        [
+            # Only apply if the current value still matches what we last read —
+            # raises ChecksumMismatchError if someone else changed it first.
+            FieldUpdate(
+                "payments.fee",
+                "0.6%",
+                expected_checksum="abc123",
+                value_description="Raised after Q3 review",
+            ),
+        ],
+    )
 ```
 
 ## Watch for changes
