@@ -156,6 +156,39 @@ The `timeout` parameter sets the default per-RPC deadline in seconds (default: 1
 client = ConfigClient("localhost:9090", timeout=30.0)
 ```
 
+## Custom interceptors
+
+Pass `interceptors` to inject your own gRPC client interceptors — for logging, metrics,
+custom tracing, or anything else that needs to observe or modify outbound RPCs:
+
+```python
+import grpc
+
+client = ConfigClient(
+    "localhost:9090",
+    subject="myapp",
+    interceptors=[my_logging_interceptor, my_metrics_interceptor],
+)
+```
+
+`ConfigClient` accepts `grpc.UnaryUnaryClientInterceptor` / `grpc.UnaryStreamClientInterceptor`
+instances; `AsyncConfigClient` accepts `grpc.aio.ClientInterceptor` instances (passed
+directly to the `grpc.aio` channel).
+
+On `ConfigClient`, interceptor order (outermost first) is:
+
+1. **OTel** (if `otel=True`)
+2. **Your `interceptors`**, in list order
+3. **The SDK's internal auth interceptor** (innermost — attaches `subject`/`role`/
+   `tenant_id`/token metadata last, closest to the wire)
+
+This means your interceptors see the call before auth metadata is attached, and can inspect
+or wrap the call as it travels outward through any later layers (e.g. OTel spans).
+
+On `AsyncConfigClient`, `grpc.aio` doesn't support channel-level interceptor stacking the
+same way — auth metadata is attached directly per call rather than via an interceptor.
+There, order is simply **OTel first, then your `interceptors`**.
+
 ## OpenTelemetry
 
 Pass `otel=True` to trace all RPCs with OpenTelemetry:
@@ -170,8 +203,56 @@ Requires the optional extra:
 pip install 'opendecree[otel]'
 ```
 
-The OTel interceptor is outermost and wraps all other interceptors, so every outbound RPC
-appears as a span in your traces.
+The OTel interceptor is outermost and wraps all other interceptors (including any you pass
+via `interceptors`), so every outbound RPC appears as a span in your traces.
+
+## Version compatibility
+
+The SDK can check that the server it's talking to is within its supported version range
+(`opendecree.SUPPORTED_SERVER_VERSION`, e.g. `">=0.3.0,<1.0.0"`).
+
+### Automatic check on first call
+
+Pass `check_version=True` to the constructor to run the check lazily before the first RPC:
+
+```python
+client = ConfigClient("localhost:9090", subject="myapp", check_version=True)
+
+# Raises IncompatibleServerError here if the server is outside the supported range.
+client.get("tenant-id", "payments.fee")
+```
+
+The check runs once per client instance and is cached.
+
+### Manual checks
+
+Call `get_server_version()` to fetch (and cache) the server's version and commit:
+
+```python
+info = client.get_server_version()
+print(info.version)  # e.g. "0.3.1"
+print(info.commit)   # server build's git commit hash
+```
+
+Call `check_compatibility()` to explicitly raise if the cached (or freshly fetched) server
+version is outside the supported range:
+
+```python
+from opendecree import IncompatibleServerError
+
+try:
+    client.check_compatibility()
+except IncompatibleServerError as e:
+    print(f"server is incompatible with this SDK: {e}")
+```
+
+`IncompatibleServerError` inherits from `DecreeError` — see
+[Error handling](#error-handling) below. `AsyncConfigClient` exposes the same
+`get_server_version()` and `check_compatibility()` methods — `await` them there.
+
+!!! note "Unparseable versions skip the check"
+    If the server reports a version string that isn't valid PEP 440 (e.g. a `"dev"` build),
+    the compatibility check is skipped rather than raising.
 
 ## Error handling
 
