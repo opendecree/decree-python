@@ -134,6 +134,16 @@ def test_convert_url():
     assert isinstance(result, str)
 
 
+def test_url_is_str_subtype():
+    # URL must remain a plain str for read-side compatibility, but be
+    # distinguishable at runtime so writes can pick the url_value wire variant.
+    u = URL("https://example.com")
+    assert isinstance(u, str)
+    assert isinstance(u, URL)
+    assert not isinstance("https://example.com", URL)
+    assert u == "https://example.com"
+
+
 def test_parse_timedelta_empty():
     assert _parse_timedelta("") == timedelta()
 

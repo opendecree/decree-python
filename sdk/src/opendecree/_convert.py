@@ -12,8 +12,16 @@ from datetime import datetime, timedelta
 
 from opendecree.errors import TypeMismatchError
 
-# Type alias for url-typed fields — semantically distinct from plain str.
-URL = str
+
+class URL(str):
+    """String subtype for url-typed fields.
+
+    Reads behave identically to ``str`` — pass ``URL`` to ``get()`` purely to
+    express intent in your own annotations. Writes use the subtype to pick the
+    ``url_value`` oneof variant instead of ``string_value`` (see
+    ``make_typed_value`` in ``_stubs.py``) — the server validates the two
+    variants against different schema field types.
+    """
 
 
 def _parse_timedelta(s: str) -> timedelta:
@@ -65,12 +73,13 @@ def convert_value(raw: str, target_type: type) -> object:
     """Convert a raw string value to the target Python type.
 
     Supported types: str, int, float, bool, datetime, timedelta, dict, list.
-    URL is an alias for str and is handled identically.
+    URL is a str subtype and is read identically — the wire value is the same
+    string regardless of which TypedValue oneof variant the server populated.
 
     Raises:
         TypeMismatchError: If the value cannot be converted to the target type.
     """
-    if target_type is str:
+    if target_type is str or target_type is URL:
         return raw
     try:
         if target_type is int:
