@@ -64,11 +64,11 @@ integration: $(TOOLS_SENTINEL)
 	@test -n "$(DECREE_TEST_ADDR)" || (echo "Set DECREE_TEST_ADDR=host:port" && exit 1)
 	$(DOCKER_RUN_ROOT) sh -c "cd sdk && pip install -e . -q 2>/dev/null && DECREE_TEST_ADDR=$(DECREE_TEST_ADDR) pytest -m integration -v"
 
-## docs: Generate API reference HTML from docstrings (pdoc)
-docs: $(TOOLS_SENTINEL)
-	@mkdir -p sdk/docs/api
-	$(DOCKER_RUN_ROOT) sh -c "cd sdk && pip install -e . -q 2>/dev/null && pdoc --output-directory /workspace/sdk/docs/api --no-show-source --docformat google opendecree !opendecree._generated && chown -R $(shell id -u):$(shell id -g) /workspace/sdk/docs/api"
-	@echo "Generated API docs in sdk/docs/api/"
+## docs: Build the mkdocs documentation site (output in site/)
+docs:
+	pip install -q 'mkdocs-material' 'mkdocstrings[python]'
+	mkdocs build
+	@echo "Built docs site in site/"
 
 ## build: Build sdist + wheel
 build: $(TOOLS_SENTINEL)

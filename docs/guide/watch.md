@@ -130,6 +130,8 @@ async with AsyncConfigClient("localhost:9090", subject="myapp") as client:
 
 Callbacks work the same as the sync watcher — they are plain functions, not coroutines.
 
+See [Async Usage](async.md) for the full async client and watcher API.
+
 ## Fork safety
 
 gRPC channels are **not fork-safe**. Do not create a `ConfigClient` before calling `os.fork()`.

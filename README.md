@@ -54,7 +54,7 @@ with ConfigClient("localhost:9090", subject="myapp") as client:
 ```
 
 > **Fork safety:** gRPC channels are not fork-safe. Create `ConfigClient` (and start any watcher)
-> *after* forking — not before. See [Fork safety](sdk/docs/watching.md#fork-safety) for details.
+> *after* forking — not before. See [Fork safety](https://opendecree.github.io/decree-python/guide/watch/#fork-safety) for details.
 
 ## Async
 
@@ -80,10 +80,13 @@ Runnable examples in the [`examples/`](examples/) directory:
 
 ## Documentation
 
-- [Quick Start](sdk/docs/quickstart.md)
-- [Configuration](sdk/docs/configuration.md)
-- [Watching](sdk/docs/watching.md)
-- [Async Usage](sdk/docs/async.md)
+Full documentation, including guides and the API reference, is published at
+**[opendecree.github.io/decree-python](https://opendecree.github.io/decree-python)**:
+
+- [Connecting](https://opendecree.github.io/decree-python/guide/connect/) — client options (auth, TLS, retry, timeouts, error handling)
+- [Watching](https://opendecree.github.io/decree-python/guide/watch/) — live subscriptions and change patterns
+- [Async Usage](https://opendecree.github.io/decree-python/guide/async/) — async client and watcher
+- [API Reference](https://opendecree.github.io/decree-python/api/) — full auto-generated API docs
 
 For detailed concepts (schemas, typed values, versioning, auth), see the [main OpenDecree docs](https://github.com/opendecree/decree).
 

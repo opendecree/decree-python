@@ -34,7 +34,7 @@ htmlcov/
 .ruff_cache/
 
 # Generated docs
-sdk/docs/api/
+site/
 
 # OS
 .DS_Store

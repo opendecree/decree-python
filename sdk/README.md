@@ -61,10 +61,13 @@ async with AsyncConfigClient("localhost:9090", subject="myapp") as client:
 
 ## Documentation
 
-- [Quick Start](docs/quickstart.md)
-- [Configuration](docs/configuration.md)
-- [Watching](docs/watching.md)
-- [Async Usage](docs/async.md)
+Full documentation, including guides and the API reference, is published at
+**[opendecree.github.io/decree-python](https://opendecree.github.io/decree-python)**:
+
+- [Connecting](https://opendecree.github.io/decree-python/guide/connect/) — client options (auth, TLS, retry, timeouts, error handling)
+- [Watching](https://opendecree.github.io/decree-python/guide/watch/) — live subscriptions and change patterns
+- [Async Usage](https://opendecree.github.io/decree-python/guide/async/) — async client and watcher
+- [API Reference](https://opendecree.github.io/decree-python/api/) — full auto-generated API docs
 
 For detailed concepts (schemas, typed values, versioning, auth), see the [main OpenDecree docs](https://github.com/opendecree/decree).
 

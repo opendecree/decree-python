@@ -43,7 +43,6 @@ dev = [
     "mypy-protobuf>=5.1.0",
     "ruff>=0.15.16",
     "grpcio-tools>=1.81.0",
-    "pdoc>=16.0.0",
 ]
 
 [project.urls]
