@@ -82,6 +82,7 @@ Runnable examples are available in the [`examples/`](https://github.com/opendecr
 
 - [Connecting](guide/connect.md) — all client options (auth, TLS, retry, timeouts)
 - [Watching](guide/watch.md) — live subscriptions and change patterns
+- [Async Usage](guide/async.md) — async client and watcher
 - [API Reference](api/index.md) — full auto-generated API docs
 
 For server concepts (schemas, typed values, versioning, auth), see the [main OpenDecree docs](https://github.com/opendecree/decree).

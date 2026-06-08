@@ -46,6 +46,7 @@ nav:
   - Guide:
     - Connecting: guide/connect.md
     - Watching: guide/watch.md
+    - Async Usage: guide/async.md
   - API Reference: api/index.md
 
 markdown_extensions:

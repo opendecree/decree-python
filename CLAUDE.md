@@ -16,7 +16,7 @@ clients, a field-watching subscription layer, and optional OpenTelemetry instrum
 | Lint / format | ruff |
 | Type checking | mypy |
 | Tests | pytest, pytest-asyncio |
-| Docs | pdoc |
+| Docs | mkdocs (material) + mkdocstrings |
 
 ## Development
 
