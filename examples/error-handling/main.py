@@ -47,10 +47,6 @@ def main() -> None:
         value = client.get(tenant_id, "app.debug", str, nullable=True)
         print(f"app.debug (after set_null):  {value!r}")
 
-        # Restore it.
-        client.set(tenant_id, "app.debug", "false")
-        print(f"app.debug (restored):        {client.get(tenant_id, 'app.debug', bool)!r}")
-
         # --- Error hierarchy ---
         print("\n=== Error hierarchy ===")
 

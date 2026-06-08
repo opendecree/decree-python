@@ -37,12 +37,14 @@ def main() -> None:
         fee_rate = client.get(tenant_id, "payments.fee_rate", float)
         print(f"payments.fee_rate: {fee_rate}")
 
-        # set() and set_many() for writes.
-        client.set(tenant_id, "app.debug", "true")
-        print("\nSet app.debug = true")
+        # set() and set_many() for writes. The value is always a string —
+        # the server validates it against the field's declared type, so
+        # this works cleanly for string fields like app.name.
+        client.set(tenant_id, "app.name", "Acme Corp App (updated)")
+        print("\nSet app.name = 'Acme Corp App (updated)'")
 
-        debug = client.get(tenant_id, "app.debug", bool)
-        print(f"app.debug:         {debug}")
+        name = client.get(tenant_id, "app.name")
+        print(f"app.name:          {name}")
 
 
 def get_tenant_id() -> str:
