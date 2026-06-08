@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+import json
+from datetime import datetime, timedelta
 from types import ModuleType
 from typing import Any
+
+from opendecree._convert import URL
+from opendecree.types import ConfigValue
 
 
 def ensure_stubs() -> tuple[ModuleType, ModuleType]:
@@ -21,15 +26,54 @@ def ensure_stubs() -> tuple[ModuleType, ModuleType]:
     return cs_pb2, cs_grpc
 
 
-def make_string_typed_value(value: str) -> Any:
-    """Create a TypedValue proto with string_value set.
+def make_typed_value(value: ConfigValue) -> Any:
+    """Build a TypedValue proto whose oneof variant matches `value`'s Python type.
 
-    The server accepts string values for all field types and performs
-    type coercion based on the schema definition.
+    This is the write-side mirror of `convert_value`: the server requires the
+    populated oneof variant to match the field's declared schema type exactly
+    (no coercion), so the SDK picks the variant from the value's runtime type
+    rather than looking up the schema (which would cost an extra round trip).
+
+    | Python type           | TypedValue variant |
+    |-----------------------|--------------------|
+    | `bool`                | `bool_value`       |
+    | `URL`                 | `url_value`        |
+    | `str`                 | `string_value`     |
+    | `int`                 | `integer_value`    |
+    | `float`               | `number_value`     |
+    | `datetime`            | `time_value`       |
+    | `timedelta`           | `duration_value`   |
+    | `dict` / `list`       | `json_value`       |
+
+    `bool` is checked before `int` (it's a subclass), and `URL` before `str`
+    (same reason) — `URL` is a `str` subtype precisely so a write can
+    distinguish a `url`-typed field from a plain `string`-typed one.
     """
+    from google.protobuf import duration_pb2, timestamp_pb2
+
     from opendecree._generated.centralconfig.v1 import types_pb2
 
-    return types_pb2.TypedValue(string_value=value)
+    if isinstance(value, bool):
+        return types_pb2.TypedValue(bool_value=value)
+    if isinstance(value, URL):
+        return types_pb2.TypedValue(url_value=value)
+    if isinstance(value, str):
+        return types_pb2.TypedValue(string_value=value)
+    if isinstance(value, int):
+        return types_pb2.TypedValue(integer_value=value)
+    if isinstance(value, float):
+        return types_pb2.TypedValue(number_value=value)
+    if isinstance(value, datetime):
+        ts = timestamp_pb2.Timestamp()
+        ts.FromDatetime(value)
+        return types_pb2.TypedValue(time_value=ts)
+    if isinstance(value, timedelta):
+        d = duration_pb2.Duration()
+        d.FromTimedelta(value)
+        return types_pb2.TypedValue(duration_value=d)
+    if isinstance(value, (dict, list)):
+        return types_pb2.TypedValue(json_value=json.dumps(value))
+    raise TypeError(f"unsupported value type for set(): {type(value).__name__}")
 
 
 def process_get_response(
