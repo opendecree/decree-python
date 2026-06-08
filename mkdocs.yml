@@ -45,6 +45,7 @@ nav:
   - Home: index.md
   - Guide:
     - Connecting: guide/connect.md
+    - Types and Values: guide/types.md
     - Watching: guide/watch.md
     - Async Usage: guide/async.md
   - API Reference: api/index.md
