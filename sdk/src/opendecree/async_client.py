@@ -23,12 +23,12 @@ from opendecree._interceptors import _build_metadata
 from opendecree._retry import RetryConfig, async_with_retry, write_safe_config
 from opendecree._stubs import (
     ensure_stubs,
-    make_string_typed_value,
+    make_typed_value,
     process_get_all_response,
     process_get_response,
 )
 from opendecree.errors import map_grpc_error
-from opendecree.types import FieldUpdate, ServerVersion
+from opendecree.types import ConfigValue, FieldUpdate, ServerVersion
 
 
 class AsyncConfigClient:
@@ -291,7 +291,7 @@ class AsyncConfigClient:
         self,
         tenant_id: str,
         field_path: str,
-        value: str,
+        value: ConfigValue,
         *,
         description: str | None = None,
         value_description: str | None = None,
@@ -300,13 +300,18 @@ class AsyncConfigClient:
     ) -> None:
         """Set a config value.
 
-        The value is sent as a string — the server coerces it to the
-        schema-defined type (integer, bool, etc.).
+        `value` is a native Python value — ``str``, ``int``, ``float``,
+        ``bool``, ``datetime``, ``timedelta``, ``dict``, ``list``, or ``URL``
+        (for ``url``-typed fields; a plain ``str`` targets ``string``-typed
+        fields). The SDK picks the wire representation matching `value`'s
+        runtime type, which the server then validates against the field's
+        declared schema type — passing the wrong Python type raises
+        ``InvalidArgumentError``.
 
         Args:
             tenant_id: Tenant UUID.
             field_path: Dot-separated field path (e.g., ``"payments.fee"``).
-            value: The value as a string.
+            value: The value, as a Python type matching the field's schema type.
             description: Optional version-level description for the audit log.
             value_description: Optional description stored with this specific value.
             expected_checksum: When set, the server rejects the write if the
@@ -332,7 +337,7 @@ class AsyncConfigClient:
                 self._pb2.SetFieldRequest(
                     tenant_id=tenant_id,
                     field_path=field_path,
-                    value=make_string_typed_value(value),
+                    value=make_typed_value(value),
                     description=description,
                     value_description=value_description,
                     expected_checksum=expected_checksum,
@@ -378,7 +383,7 @@ class AsyncConfigClient:
             proto_updates = [
                 self._pb2.FieldUpdate(
                     field_path=u.field_path,
-                    value=make_string_typed_value(u.value),
+                    value=make_typed_value(u.value),
                     expected_checksum=u.expected_checksum,
                     value_description=u.value_description,
                 )
