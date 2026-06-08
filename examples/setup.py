@@ -8,6 +8,7 @@ Usage:
     python setup.py
 """
 
+import json
 import os
 import subprocess
 import sys
@@ -21,8 +22,20 @@ def main() -> None:
 
     # Use the decree CLI to seed — it handles schema creation, tenant
     # creation, and config import in one command.
+    # --auto-publish: tenants can only be created against a published
+    #   schema version, and imported versions start as unpublished drafts.
+    # --subject: the server rejects unauthenticated requests (empty
+    #   x-subject), and the CLI does not set one by default.
     result = subprocess.run(
-        ["decree", "seed", "--server", addr, "--insecure", str(seed_file)],
+        [
+            "decree", "seed",
+            "--server", addr,
+            "--insecure",
+            "--auto-publish",
+            "--subject", "examples-setup",
+            "--output", "json",
+            str(seed_file),
+        ],
         capture_output=True,
         text=True,
     )
@@ -30,16 +43,19 @@ def main() -> None:
         print(f"Error seeding: {result.stderr}", file=sys.stderr)
         sys.exit(1)
 
-    # Parse tenant ID from output (line: "Tenant:  <id> (created=true)")
-    for line in result.stdout.splitlines():
-        if line.startswith("Tenant:"):
-            tenant_id = line.split()[1]
+    # `decree seed -o json` prints a [][string] table: a header row
+    # ["RESOURCE", "ID", "CREATED", "DETAILS"] followed by one row per
+    # resource, e.g. ["tenant", "<id>", "true", ""].
+    rows = json.loads(result.stdout)
+    for row in rows:
+        if row[0] == "tenant":
+            tenant_id = row[1]
             tenant_id_file.write_text(tenant_id)
-            print(result.stdout, end="")
+            print(f"Tenant: {tenant_id}")
             print("Tenant ID written to .tenant-id")
             return
 
-    print(f"Could not parse tenant ID from output:\n{result.stdout}", file=sys.stderr)
+    print(f"Could not find tenant row in output:\n{result.stdout}", file=sys.stderr)
     sys.exit(1)
 
 
