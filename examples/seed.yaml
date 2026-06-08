@@ -9,6 +9,7 @@ schema:
     app.debug:
       type: bool
       description: Enable debug logging
+      nullable: true
     features.dark_mode:
       type: bool
       description: Enable dark mode UI
