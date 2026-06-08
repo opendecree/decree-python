@@ -5,7 +5,7 @@ The SDK provides async equivalents for all sync APIs, built on `grpc.aio`.
 ## AsyncConfigClient
 
 ```python
-from opendecree import AsyncConfigClient
+from opendecree import AsyncConfigClient, FieldUpdate
 
 async with AsyncConfigClient("localhost:9090", subject="myapp") as client:
     # Typed gets (same overload pattern as sync)
@@ -18,11 +18,15 @@ async with AsyncConfigClient("localhost:9090", subject="myapp") as client:
 
     # Writes
     await client.set("tenant-id", "payments.fee", "0.5%")
-    await client.set_many("tenant-id", {"a": "1", "b": "2"})
+    await client.set_many(
+        "tenant-id",
+        [FieldUpdate("a", "1"), FieldUpdate("b", "2")],
+        description="batch update",
+    )
     await client.set_null("tenant-id", "payments.fee")
 ```
 
-Same constructor options as `ConfigClient` — see [Configuration](configuration.md).
+Same constructor options as `ConfigClient` — see [Connecting](connect.md).
 
 ## AsyncConfigWatcher
 
@@ -30,11 +34,10 @@ Same constructor options as `ConfigClient` — see [Configuration](configuration
 from opendecree import AsyncConfigClient
 
 async with AsyncConfigClient("localhost:9090", subject="myapp") as client:
-    watcher = client.watch("tenant-id")
-    fee = watcher.field("payments.fee", float, default=0.01)
-    enabled = watcher.field("payments.enabled", bool, default=False)
+    async with client.watch("tenant-id") as watcher:
+        fee = watcher.field("payments.fee", float, default=0.01)
+        enabled = watcher.field("payments.enabled", bool, default=False)
 
-    async with watcher:
         # .value works the same
         print(fee.value)
 
@@ -48,12 +51,12 @@ async with AsyncConfigClient("localhost:9090", subject="myapp") as client:
 Use `async for` instead of `for`:
 
 ```python
-watcher = client.watch("tenant-id")
-fee = watcher.field("payments.fee", float, default=0.01)
+async with AsyncConfigClient("localhost:9090", subject="myapp") as client:
+    async with client.watch("tenant-id") as watcher:
+        fee = watcher.field("payments.fee", float, default=0.01)
 
-async with watcher:
-    async for change in fee.changes():
-        print(f"{change.old_value} -> {change.new_value}")
+        async for change in fee.changes():
+            print(f"{change.old_value} -> {change.new_value}")
 ```
 
 ### Callbacks
@@ -83,11 +86,18 @@ The public API is otherwise identical — same constructor options, same `get()`
 ## When to use async
 
 Use the async API when:
+
 - Your application already uses asyncio (FastAPI, aiohttp, etc.)
 - You need to manage many concurrent connections efficiently
 
 Use the sync API when:
+
 - Your application is synchronous (Flask, Django, scripts)
 - Simplicity matters more than concurrency
 
 Both APIs are equally capable and tested.
+
+## Next steps
+
+- [Connecting](connect.md) — client options (auth, TLS, retry, error handling)
+- [Watching](watch.md) — live subscriptions and change patterns
