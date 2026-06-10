@@ -105,7 +105,7 @@ gh attestation verify opendecree-*.whl --repo opendecree/decree-python
 ## Requirements
 
 - Python 3.11+
-- A running OpenDecree server (v0.3.0+)
+- A running OpenDecree server (v0.8.0 – v0.x, pre-1.0)
 
 ## Questions?
 

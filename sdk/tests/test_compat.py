@@ -107,8 +107,8 @@ def test_dev_version_skips_check():
 
 
 def test_uses_default_range():
-    # Default is SUPPORTED_SERVER_VERSION = ">=0.3.0,<1.0.0"
-    check_version_compatible("0.5.0")  # should not raise
+    # Default is SUPPORTED_SERVER_VERSION = ">=0.8.0,<1.0.0"
+    check_version_compatible("0.9.0")  # should not raise
 
 
 # --- fetch_server_version ---
@@ -193,7 +193,7 @@ def test_client_check_compatibility_passes():
 
         client = ConfigClient.__new__(ConfigClient)
         client._timeout = 5.0
-        client._server_version = ServerVersion(version="0.3.1", commit="abc")
+        client._server_version = ServerVersion(version="0.9.0", commit="abc")
         client._version_stub = MagicMock()
         client._version_pb2 = MagicMock()
 

@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Fixed
+
+- `SUPPORTED_SERVER_VERSION` corrected to `>=0.8.0,<1.0.0` (was `>=0.3.0,<1.0.0`). The
+  advertised minimum server version was stale — the SDK's proto stubs already target
+  v0.8.0+. README and docs updated to match. Aligns with the TypeScript SDK.
+
 ## [0.3.0a1] - 2026-04-27
 
 ### Added

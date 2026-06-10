@@ -105,4 +105,4 @@ omit = ["src/opendecree/_generated/*"]
 fail_under = 95
 
 [tool.opendecree]
-supported_server_version = ">=0.3.0,<1.0.0"
+supported_server_version = ">=0.8.0,<1.0.0"
