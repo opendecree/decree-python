@@ -78,7 +78,7 @@ This package is fully typed. It ships a `py.typed` marker and `.pyi` stub files 
 ## Requirements
 
 - Python 3.11+
-- A running OpenDecree server (v0.3.0+)
+- A running OpenDecree server (v0.8.0 – v0.x, pre-1.0)
 
 ## License
 
