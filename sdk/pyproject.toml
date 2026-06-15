@@ -32,7 +32,7 @@ otel = [
     "opentelemetry-instrumentation-grpc>=0.63b1",
 ]
 docs = [
-    "mkdocs-material>=9.5",
+    "mkdocs-material>=9.7.6",
     "mkdocstrings[python]>=1.0.4",
 ]
 dev = [
