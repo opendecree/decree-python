@@ -15,6 +15,11 @@ updates:
         update-types:
           - minor
           - patch
+    ignore:
+      # grpcio-tools 1.81.1 (latest) caps protobuf<7; unignore once a
+      # grpcio-tools release supports protobuf 7.x.
+      - dependency-name: "protobuf"
+        versions: [">=7"]
 
   - package-ecosystem: github-actions
     directory: /
