@@ -13,10 +13,10 @@ import builtins as _builtins
 import sys
 import typing as _typing
 
-if sys.version_info >= (3, 10):
-    from typing import TypeAlias as _TypeAlias
+if sys.version_info >= (3, 11):
+    from typing import TypeAlias as _TypeAlias, Never as _Never
 else:
-    from typing_extensions import TypeAlias as _TypeAlias
+    from typing_extensions import TypeAlias as _TypeAlias, Never as _Never
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -107,8 +107,11 @@ class QueryWriteLogResponse(_message.Message):
         entries: _abc.Iterable[_types_pb2.AuditEntry] | None = ...,
         next_page_token: _builtins.str = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["entries", b"entries", "next_page_token", b"next_page_token"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___QueryWriteLogResponse: _TypeAlias = QueryWriteLogResponse  # noqa: Y015
 
@@ -175,6 +178,7 @@ class GetFieldUsageResponse(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["stats", b"stats"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___GetFieldUsageResponse: _TypeAlias = GetFieldUsageResponse  # noqa: Y015
 
@@ -231,8 +235,11 @@ class GetTenantUsageResponse(_message.Message):
         *,
         field_stats: _abc.Iterable[_types_pb2.UsageStats] | None = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["field_stats", b"field_stats"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___GetTenantUsageResponse: _TypeAlias = GetTenantUsageResponse  # noqa: Y015
 
@@ -260,6 +267,7 @@ class GetUnusedFieldsRequest(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["since", b"since", "tenant_id", b"tenant_id"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___GetUnusedFieldsRequest: _TypeAlias = GetUnusedFieldsRequest  # noqa: Y015
 
@@ -277,7 +285,98 @@ class GetUnusedFieldsResponse(_message.Message):
         *,
         field_paths: _abc.Iterable[_builtins.str] | None = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["field_paths", b"field_paths"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___GetUnusedFieldsResponse: _TypeAlias = GetUnusedFieldsResponse  # noqa: Y015
+
+@_typing.final
+class VerifyChainRequest(_message.Message):
+    """--- Chain verification ---"""
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    TENANT_ID_FIELD_NUMBER: _builtins.int
+    tenant_id: _builtins.str
+    """Tenant ID (UUID) whose chain to verify. Empty verifies the global (schema-level) chain."""
+    def __init__(
+        self,
+        *,
+        tenant_id: _builtins.str = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["tenant_id", b"tenant_id"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___VerifyChainRequest: _TypeAlias = VerifyChainRequest  # noqa: Y015
+
+@_typing.final
+class VerifyChainResponse(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    TENANT_ID_FIELD_NUMBER: _builtins.int
+    TOTAL_FIELD_NUMBER: _builtins.int
+    OK_FIELD_NUMBER: _builtins.int
+    BREAKS_FIELD_NUMBER: _builtins.int
+    tenant_id: _builtins.str
+    """Tenant ID that was verified (mirrors the request)."""
+    total: _builtins.int
+    """Total number of entries in the chain."""
+    ok: _builtins.bool
+    """Whether the chain is intact (no breaks found)."""
+    @_builtins.property
+    def breaks(self) -> _containers.RepeatedCompositeFieldContainer[Global___AuditChainBreak]:
+        """Any breaks found. Empty when ok is true."""
+
+    def __init__(
+        self,
+        *,
+        tenant_id: _builtins.str = ...,
+        total: _builtins.int = ...,
+        ok: _builtins.bool = ...,
+        breaks: _abc.Iterable[Global___AuditChainBreak] | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["breaks", b"breaks", "ok", b"ok", "tenant_id", b"tenant_id", "total", b"total"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___VerifyChainResponse: _TypeAlias = VerifyChainResponse  # noqa: Y015
+
+@_typing.final
+class AuditChainBreak(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    ENTRY_ID_FIELD_NUMBER: _builtins.int
+    POSITION_FIELD_NUMBER: _builtins.int
+    GOT_FIELD_NUMBER: _builtins.int
+    WANT_FIELD_NUMBER: _builtins.int
+    entry_id: _builtins.str
+    """ID of the entry where the break was detected."""
+    position: _builtins.int
+    """0-based position in the ordered chain."""
+    got: _builtins.str
+    """The entry_hash stored in the database."""
+    want: _builtins.str
+    """The entry_hash we recomputed from the entry's fields."""
+    def __init__(
+        self,
+        *,
+        entry_id: _builtins.str = ...,
+        position: _builtins.int = ...,
+        got: _builtins.str = ...,
+        want: _builtins.str = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["entry_id", b"entry_id", "got", b"got", "position", b"position", "want", b"want"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___AuditChainBreak: _TypeAlias = AuditChainBreak  # noqa: Y015

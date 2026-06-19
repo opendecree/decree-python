@@ -5,7 +5,7 @@ import warnings
 
 from opendecree._generated.centralconfig.v1 import schema_service_pb2 as centralconfig_dot_v1_dot_schema__service__pb2
 
-GRPC_GENERATED_VERSION = '1.80.0'
+GRPC_GENERATED_VERSION = '1.81.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class SchemaServiceStub(object):
+class SchemaServiceStub:
     """SchemaService manages configuration schemas, tenants, and field-level locking.
 
     Schemas define the allowed fields and their types for tenant configurations.
@@ -122,7 +122,7 @@ class SchemaServiceStub(object):
                 _registered_method=True)
 
 
-class SchemaServiceServicer(object):
+class SchemaServiceServicer:
     """SchemaService manages configuration schemas, tenants, and field-level locking.
 
     Schemas define the allowed fields and their types for tenant configurations.
@@ -346,7 +346,7 @@ def add_SchemaServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class SchemaService(object):
+class SchemaService:
     """SchemaService manages configuration schemas, tenants, and field-level locking.
 
     Schemas define the allowed fields and their types for tenant configurations.

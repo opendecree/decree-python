@@ -5,7 +5,7 @@ import warnings
 
 from opendecree._generated.centralconfig.v1 import config_service_pb2 as centralconfig_dot_v1_dot_config__service__pb2
 
-GRPC_GENERATED_VERSION = '1.80.0'
+GRPC_GENERATED_VERSION = '1.81.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class ConfigServiceStub(object):
+class ConfigServiceStub:
     """ConfigService manages configuration values, versions, and real-time subscriptions.
 
     Configuration is stored per-tenant using delta versioning: each write creates a
@@ -85,6 +85,11 @@ class ConfigServiceStub(object):
                 request_serializer=centralconfig_dot_v1_dot_config__service__pb2.RollbackToVersionRequest.SerializeToString,
                 response_deserializer=centralconfig_dot_v1_dot_config__service__pb2.RollbackToVersionResponse.FromString,
                 _registered_method=True)
+        self.DiffVersions = channel.unary_unary(
+                '/centralconfig.v1.ConfigService/DiffVersions',
+                request_serializer=centralconfig_dot_v1_dot_config__service__pb2.DiffVersionsRequest.SerializeToString,
+                response_deserializer=centralconfig_dot_v1_dot_config__service__pb2.DiffVersionsResponse.FromString,
+                _registered_method=True)
         self.Subscribe = channel.unary_stream(
                 '/centralconfig.v1.ConfigService/Subscribe',
                 request_serializer=centralconfig_dot_v1_dot_config__service__pb2.SubscribeRequest.SerializeToString,
@@ -102,7 +107,7 @@ class ConfigServiceStub(object):
                 _registered_method=True)
 
 
-class ConfigServiceServicer(object):
+class ConfigServiceServicer:
     """ConfigService manages configuration values, versions, and real-time subscriptions.
 
     Configuration is stored per-tenant using delta versioning: each write creates a
@@ -181,12 +186,31 @@ class ConfigServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def DiffVersions(self, request, context):
+        """DiffVersions compares the full resolved config at two versions and returns
+        the fields that differ. Unchanged fields are omitted. Results are sorted by
+        field path for deterministic output.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def Subscribe(self, request, context):
         """Real-time subscriptions via server-streaming.
 
         Subscribe opens a server-streaming connection that pushes ConfigChange events
-        whenever the tenant's configuration is modified. The stream remains open until
-        the client disconnects or the server shuts down.
+        whenever the tenant's configuration is modified.
+
+        Stream lifetime:
+        - Client disconnect: stream ends immediately.
+        - Server closes with OK status: the server-side pub/sub backend restarted
+        (e.g. Redis reconnect). Clients MUST reconnect with exponential backoff;
+        an OK close does NOT indicate the subscription is permanently gone.
+        - Server closes with error status: treat as a transient failure and reconnect
+        with backoff.
+
+        Use the configwatcher package for a high-level client that handles reconnection
+        automatically.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -251,6 +275,11 @@ def add_ConfigServiceServicer_to_server(servicer, server):
                     request_deserializer=centralconfig_dot_v1_dot_config__service__pb2.RollbackToVersionRequest.FromString,
                     response_serializer=centralconfig_dot_v1_dot_config__service__pb2.RollbackToVersionResponse.SerializeToString,
             ),
+            'DiffVersions': grpc.unary_unary_rpc_method_handler(
+                    servicer.DiffVersions,
+                    request_deserializer=centralconfig_dot_v1_dot_config__service__pb2.DiffVersionsRequest.FromString,
+                    response_serializer=centralconfig_dot_v1_dot_config__service__pb2.DiffVersionsResponse.SerializeToString,
+            ),
             'Subscribe': grpc.unary_stream_rpc_method_handler(
                     servicer.Subscribe,
                     request_deserializer=centralconfig_dot_v1_dot_config__service__pb2.SubscribeRequest.FromString,
@@ -274,7 +303,7 @@ def add_ConfigServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class ConfigService(object):
+class ConfigService:
     """ConfigService manages configuration values, versions, and real-time subscriptions.
 
     Configuration is stored per-tenant using delta versioning: each write creates a
@@ -494,6 +523,33 @@ class ConfigService(object):
             '/centralconfig.v1.ConfigService/RollbackToVersion',
             centralconfig_dot_v1_dot_config__service__pb2.RollbackToVersionRequest.SerializeToString,
             centralconfig_dot_v1_dot_config__service__pb2.RollbackToVersionResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DiffVersions(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/centralconfig.v1.ConfigService/DiffVersions',
+            centralconfig_dot_v1_dot_config__service__pb2.DiffVersionsRequest.SerializeToString,
+            centralconfig_dot_v1_dot_config__service__pb2.DiffVersionsResponse.FromString,
             options,
             channel_credentials,
             insecure,

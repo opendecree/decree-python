@@ -51,6 +51,10 @@ class AuditServiceStub:
     """GetUnusedFields returns field paths that have not been read since the given time.
     Useful for identifying configuration fields that may be safe to deprecate.
     """
+    VerifyChain: _grpc.UnaryUnaryMultiCallable[_audit_service_pb2.VerifyChainRequest, _audit_service_pb2.VerifyChainResponse]
+    """VerifyChain walks a tenant's audit chain and reports any tampered entries.
+    An empty tenant_id verifies the global (schema-level) chain.
+    """
 
 @_typing.type_check_only
 class AuditServiceAsyncStub(AuditServiceStub):
@@ -74,6 +78,10 @@ class AuditServiceAsyncStub(AuditServiceStub):
     GetUnusedFields: _aio.UnaryUnaryMultiCallable[_audit_service_pb2.GetUnusedFieldsRequest, _audit_service_pb2.GetUnusedFieldsResponse]  # type: ignore[assignment]
     """GetUnusedFields returns field paths that have not been read since the given time.
     Useful for identifying configuration fields that may be safe to deprecate.
+    """
+    VerifyChain: _aio.UnaryUnaryMultiCallable[_audit_service_pb2.VerifyChainRequest, _audit_service_pb2.VerifyChainResponse]  # type: ignore[assignment]
+    """VerifyChain walks a tenant's audit chain and reports any tampered entries.
+    An empty tenant_id verifies the global (schema-level) chain.
     """
 
 class AuditServiceServicer(metaclass=_abc_1.ABCMeta):
@@ -119,6 +127,16 @@ class AuditServiceServicer(metaclass=_abc_1.ABCMeta):
     ) -> _typing.Union[_audit_service_pb2.GetUnusedFieldsResponse, _abc.Awaitable[_audit_service_pb2.GetUnusedFieldsResponse]]:
         """GetUnusedFields returns field paths that have not been read since the given time.
         Useful for identifying configuration fields that may be safe to deprecate.
+        """
+
+    @_abc_1.abstractmethod
+    def VerifyChain(
+        self,
+        request: _audit_service_pb2.VerifyChainRequest,
+        context: _ServicerContext,
+    ) -> _typing.Union[_audit_service_pb2.VerifyChainResponse, _abc.Awaitable[_audit_service_pb2.VerifyChainResponse]]:
+        """VerifyChain walks a tenant's audit chain and reports any tampered entries.
+        An empty tenant_id verifies the global (schema-level) chain.
         """
 
 def add_AuditServiceServicer_to_server(servicer: AuditServiceServicer, server: _typing.Union[_grpc.Server, _aio.Server]) -> None: ...

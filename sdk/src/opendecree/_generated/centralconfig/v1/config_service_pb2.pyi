@@ -13,12 +13,40 @@ import builtins as _builtins
 import sys
 import typing as _typing
 
-if sys.version_info >= (3, 10):
-    from typing import TypeAlias as _TypeAlias
+if sys.version_info >= (3, 11):
+    from typing import TypeAlias as _TypeAlias, Never as _Never
 else:
-    from typing_extensions import TypeAlias as _TypeAlias
+    from typing_extensions import TypeAlias as _TypeAlias, Never as _Never
 
 DESCRIPTOR: _descriptor.FileDescriptor
+
+class _ChangeType:
+    ValueType = _typing.NewType("ValueType", _builtins.int)
+    V: _TypeAlias = ValueType  # noqa: Y015
+
+class _ChangeTypeEnumTypeWrapper(_enum_type_wrapper._EnumTypeWrapper[_ChangeType.ValueType], _builtins.type):
+    DESCRIPTOR: _descriptor.EnumDescriptor
+    CHANGE_TYPE_UNSPECIFIED: _ChangeType.ValueType  # 0
+    """Unspecified change type. Never emitted by the server."""
+    CHANGE_TYPE_ADDED: _ChangeType.ValueType  # 1
+    """The field is present in to_version but absent in from_version."""
+    CHANGE_TYPE_REMOVED: _ChangeType.ValueType  # 2
+    """The field is present in from_version but absent in to_version."""
+    CHANGE_TYPE_MODIFIED: _ChangeType.ValueType  # 3
+    """The field is present in both versions with a different value."""
+
+class ChangeType(_ChangeType, metaclass=_ChangeTypeEnumTypeWrapper):
+    """ChangeType categorizes how a field changed between two config versions."""
+
+CHANGE_TYPE_UNSPECIFIED: ChangeType.ValueType  # 0
+"""Unspecified change type. Never emitted by the server."""
+CHANGE_TYPE_ADDED: ChangeType.ValueType  # 1
+"""The field is present in to_version but absent in from_version."""
+CHANGE_TYPE_REMOVED: ChangeType.ValueType  # 2
+"""The field is present in from_version but absent in to_version."""
+CHANGE_TYPE_MODIFIED: ChangeType.ValueType  # 3
+"""The field is present in both versions with a different value."""
+Global___ChangeType: _TypeAlias = ChangeType  # noqa: Y015
 
 class _ImportMode:
     ValueType = _typing.NewType("ValueType", _builtins.int)
@@ -112,6 +140,7 @@ class GetConfigResponse(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["config", b"config"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___GetConfigResponse: _TypeAlias = GetConfigResponse  # noqa: Y015
 
@@ -169,6 +198,7 @@ class GetFieldResponse(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["value", b"value"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___GetFieldResponse: _TypeAlias = GetFieldResponse  # noqa: Y015
 
@@ -190,7 +220,9 @@ class GetFieldsRequest(_message.Message):
     """
     @_builtins.property
     def field_paths(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
-        """Dot-separated field paths to retrieve."""
+        """Dot-separated field paths to retrieve. Maximum 1 000 entries (configurable
+        via CONFIG_MAX_LIST_LEN). Exceeds returns InvalidArgument.
+        """
 
     def __init__(
         self,
@@ -224,8 +256,11 @@ class GetFieldsResponse(_message.Message):
         *,
         values: _abc.Iterable[_types_pb2.ConfigValue] | None = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["values", b"values"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___GetFieldsResponse: _TypeAlias = GetFieldsResponse  # noqa: Y015
 
@@ -241,6 +276,7 @@ class SetFieldRequest(_message.Message):
     EXPECTED_CHECKSUM_FIELD_NUMBER: _builtins.int
     DESCRIPTION_FIELD_NUMBER: _builtins.int
     VALUE_DESCRIPTION_FIELD_NUMBER: _builtins.int
+    IDEMPOTENCY_KEY_FIELD_NUMBER: _builtins.int
     tenant_id: _builtins.str
     """Tenant ID (UUID)."""
     field_path: _builtins.str
@@ -257,6 +293,11 @@ class SetFieldRequest(_message.Message):
     """Value-level description explaining what this specific value means.
     Retrievable via include_description in read requests.
     """
+    idempotency_key: _builtins.str
+    """Idempotency key for safe retries. When set, the server deduplicates
+    writes with the same key within a 24-hour window. Use the SDK's
+    WithIdempotencyKey option to set this field and enable retry.
+    """
     @_builtins.property
     def value(self) -> _types_pb2.TypedValue:
         """The typed value. Omit to set the field to null."""
@@ -270,21 +311,26 @@ class SetFieldRequest(_message.Message):
         expected_checksum: _builtins.str | None = ...,
         description: _builtins.str | None = ...,
         value_description: _builtins.str | None = ...,
+        idempotency_key: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_description", b"_description", "_expected_checksum", b"_expected_checksum", "_value_description", b"_value_description", "description", b"description", "expected_checksum", b"expected_checksum", "value", b"value", "value_description", b"value_description"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_description", b"_description", "_expected_checksum", b"_expected_checksum", "_idempotency_key", b"_idempotency_key", "_value_description", b"_value_description", "description", b"description", "expected_checksum", b"expected_checksum", "idempotency_key", b"idempotency_key", "value", b"value", "value_description", b"value_description"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_description", b"_description", "_expected_checksum", b"_expected_checksum", "_value_description", b"_value_description", "description", b"description", "expected_checksum", b"expected_checksum", "field_path", b"field_path", "tenant_id", b"tenant_id", "value", b"value", "value_description", b"value_description"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_description", b"_description", "_expected_checksum", b"_expected_checksum", "_idempotency_key", b"_idempotency_key", "_value_description", b"_value_description", "description", b"description", "expected_checksum", b"expected_checksum", "field_path", b"field_path", "idempotency_key", b"idempotency_key", "tenant_id", b"tenant_id", "value", b"value", "value_description", b"value_description"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__description: _TypeAlias = _typing.Literal["description"]  # noqa: Y015
     _WhichOneofArgType__description: _TypeAlias = _typing.Literal["_description", b"_description"]  # noqa: Y015
     _WhichOneofReturnType__expected_checksum: _TypeAlias = _typing.Literal["expected_checksum"]  # noqa: Y015
     _WhichOneofArgType__expected_checksum: _TypeAlias = _typing.Literal["_expected_checksum", b"_expected_checksum"]  # noqa: Y015
+    _WhichOneofReturnType__idempotency_key: _TypeAlias = _typing.Literal["idempotency_key"]  # noqa: Y015
+    _WhichOneofArgType__idempotency_key: _TypeAlias = _typing.Literal["_idempotency_key", b"_idempotency_key"]  # noqa: Y015
     _WhichOneofReturnType__value_description: _TypeAlias = _typing.Literal["value_description"]  # noqa: Y015
     _WhichOneofArgType__value_description: _TypeAlias = _typing.Literal["_value_description", b"_value_description"]  # noqa: Y015
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__description) -> _WhichOneofReturnType__description | None: ...
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__expected_checksum) -> _WhichOneofReturnType__expected_checksum | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__idempotency_key) -> _WhichOneofReturnType__idempotency_key | None: ...
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__value_description) -> _WhichOneofReturnType__value_description | None: ...
 
@@ -308,6 +354,7 @@ class SetFieldResponse(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["config_version", b"config_version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___SetFieldResponse: _TypeAlias = SetFieldResponse  # noqa: Y015
 
@@ -318,15 +365,22 @@ class SetFieldsRequest(_message.Message):
     TENANT_ID_FIELD_NUMBER: _builtins.int
     UPDATES_FIELD_NUMBER: _builtins.int
     DESCRIPTION_FIELD_NUMBER: _builtins.int
+    IDEMPOTENCY_KEY_FIELD_NUMBER: _builtins.int
     tenant_id: _builtins.str
     """Tenant ID (UUID)."""
     description: _builtins.str
     """Version-level description explaining why these changes were made."""
+    idempotency_key: _builtins.str
+    """Idempotency key for safe retries. When set, the server deduplicates
+    writes with the same key within a 24-hour window. Use the SDK's
+    WithIdempotencyKey option to set this field and enable retry.
+    """
     @_builtins.property
     def updates(self) -> _containers.RepeatedCompositeFieldContainer[Global___FieldUpdate]:
         """Field updates to apply. All updates are applied atomically in a single
         config version. If any update fails validation (checksum, field lock),
-        no changes are committed.
+        no changes are committed. Maximum 1 000 entries (configurable via
+        CONFIG_MAX_LIST_LEN). Exceeds returns InvalidArgument.
         """
 
     def __init__(
@@ -335,14 +389,20 @@ class SetFieldsRequest(_message.Message):
         tenant_id: _builtins.str = ...,
         updates: _abc.Iterable[Global___FieldUpdate] | None = ...,
         description: _builtins.str | None = ...,
+        idempotency_key: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_description", b"_description", "description", b"description"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_description", b"_description", "_idempotency_key", b"_idempotency_key", "description", b"description", "idempotency_key", b"idempotency_key"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_description", b"_description", "description", b"description", "tenant_id", b"tenant_id", "updates", b"updates"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_description", b"_description", "_idempotency_key", b"_idempotency_key", "description", b"description", "idempotency_key", b"idempotency_key", "tenant_id", b"tenant_id", "updates", b"updates"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__description: _TypeAlias = _typing.Literal["description"]  # noqa: Y015
     _WhichOneofArgType__description: _TypeAlias = _typing.Literal["_description", b"_description"]  # noqa: Y015
+    _WhichOneofReturnType__idempotency_key: _TypeAlias = _typing.Literal["idempotency_key"]  # noqa: Y015
+    _WhichOneofArgType__idempotency_key: _TypeAlias = _typing.Literal["_idempotency_key", b"_idempotency_key"]  # noqa: Y015
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__description) -> _WhichOneofReturnType__description | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__idempotency_key) -> _WhichOneofReturnType__idempotency_key | None: ...
 
 Global___SetFieldsRequest: _TypeAlias = SetFieldsRequest  # noqa: Y015
 
@@ -364,6 +424,7 @@ class SetFieldsResponse(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["config_version", b"config_version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___SetFieldsResponse: _TypeAlias = SetFieldsResponse  # noqa: Y015
 
@@ -434,8 +495,11 @@ class ListVersionsRequest(_message.Message):
         page_size: _builtins.int = ...,
         page_token: _builtins.str = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["page_size", b"page_size", "page_token", b"page_token", "tenant_id", b"tenant_id"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ListVersionsRequest: _TypeAlias = ListVersionsRequest  # noqa: Y015
 
@@ -457,8 +521,11 @@ class ListVersionsResponse(_message.Message):
         versions: _abc.Iterable[_types_pb2.ConfigVersion] | None = ...,
         next_page_token: _builtins.str = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["next_page_token", b"next_page_token", "versions", b"versions"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ListVersionsResponse: _TypeAlias = ListVersionsResponse  # noqa: Y015
 
@@ -478,8 +545,11 @@ class GetVersionRequest(_message.Message):
         tenant_id: _builtins.str = ...,
         version: _builtins.int = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["tenant_id", b"tenant_id", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___GetVersionRequest: _TypeAlias = GetVersionRequest  # noqa: Y015
 
@@ -499,6 +569,7 @@ class GetVersionResponse(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["config_version", b"config_version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___GetVersionResponse: _TypeAlias = GetVersionResponse  # noqa: Y015
 
@@ -555,8 +626,95 @@ class RollbackToVersionResponse(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["config_version", b"config_version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___RollbackToVersionResponse: _TypeAlias = RollbackToVersionResponse  # noqa: Y015
+
+@_typing.final
+class DiffVersionsRequest(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    TENANT_ID_FIELD_NUMBER: _builtins.int
+    FROM_VERSION_FIELD_NUMBER: _builtins.int
+    TO_VERSION_FIELD_NUMBER: _builtins.int
+    tenant_id: _builtins.str
+    """Tenant ID (UUID)."""
+    from_version: _builtins.int
+    """The base version to diff from."""
+    to_version: _builtins.int
+    """The target version to diff to."""
+    def __init__(
+        self,
+        *,
+        tenant_id: _builtins.str = ...,
+        from_version: _builtins.int = ...,
+        to_version: _builtins.int = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["from_version", b"from_version", "tenant_id", b"tenant_id", "to_version", b"to_version"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___DiffVersionsRequest: _TypeAlias = DiffVersionsRequest  # noqa: Y015
+
+@_typing.final
+class DiffVersionsResponse(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    DIFFS_FIELD_NUMBER: _builtins.int
+    @_builtins.property
+    def diffs(self) -> _containers.RepeatedCompositeFieldContainer[Global___FieldDiff]:
+        """The fields that differ between from_version and to_version, sorted by
+        field path. Unchanged fields are omitted.
+        """
+
+    def __init__(
+        self,
+        *,
+        diffs: _abc.Iterable[Global___FieldDiff] | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["diffs", b"diffs"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___DiffVersionsResponse: _TypeAlias = DiffVersionsResponse  # noqa: Y015
+
+@_typing.final
+class FieldDiff(_message.Message):
+    """FieldDiff describes a single field that differs between two config versions."""
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    FIELD_PATH_FIELD_NUMBER: _builtins.int
+    CHANGE_TYPE_FIELD_NUMBER: _builtins.int
+    OLD_VALUE_FIELD_NUMBER: _builtins.int
+    NEW_VALUE_FIELD_NUMBER: _builtins.int
+    field_path: _builtins.str
+    """Dot-separated field path (e.g. "payments.fee")."""
+    change_type: Global___ChangeType.ValueType
+    """How the field changed."""
+    old_value: _builtins.str
+    """The value at from_version. Empty when change_type is CHANGE_TYPE_ADDED."""
+    new_value: _builtins.str
+    """The value at to_version. Empty when change_type is CHANGE_TYPE_REMOVED."""
+    def __init__(
+        self,
+        *,
+        field_path: _builtins.str = ...,
+        change_type: Global___ChangeType.ValueType = ...,
+        old_value: _builtins.str = ...,
+        new_value: _builtins.str = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["change_type", b"change_type", "field_path", b"field_path", "new_value", b"new_value", "old_value", b"old_value"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___FieldDiff: _TypeAlias = FieldDiff  # noqa: Y015
 
 @_typing.final
 class SubscribeRequest(_message.Message):
@@ -566,12 +724,21 @@ class SubscribeRequest(_message.Message):
 
     TENANT_ID_FIELD_NUMBER: _builtins.int
     FIELD_PATHS_FIELD_NUMBER: _builtins.int
+    START_VERSION_FIELD_NUMBER: _builtins.int
     tenant_id: _builtins.str
     """Tenant ID (UUID) to subscribe to."""
+    start_version: _builtins.int
+    """Resume the stream from this config version (inclusive). When set, the
+    server replays all changes at versions >= start_version before streaming
+    live events. Use snapshot_version + 1 to close the gap between a
+    GetConfig snapshot and the live subscription.
+    """
     @_builtins.property
     def field_paths(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
         """Field paths to filter on. If empty, receives changes for all fields.
-        Changes to fields not in this list are silently dropped.
+        Changes to fields not in this list are silently dropped. Maximum 1 000
+        entries (configurable via CONFIG_MAX_LIST_LEN). Exceeds returns
+        InvalidArgument.
         """
 
     def __init__(
@@ -579,9 +746,15 @@ class SubscribeRequest(_message.Message):
         *,
         tenant_id: _builtins.str = ...,
         field_paths: _abc.Iterable[_builtins.str] | None = ...,
+        start_version: _builtins.int | None = ...,
     ) -> None: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["field_paths", b"field_paths", "tenant_id", b"tenant_id"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_start_version", b"_start_version", "start_version", b"start_version"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_start_version", b"_start_version", "field_paths", b"field_paths", "start_version", b"start_version", "tenant_id", b"tenant_id"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__start_version: _TypeAlias = _typing.Literal["start_version"]  # noqa: Y015
+    _WhichOneofArgType__start_version: _TypeAlias = _typing.Literal["_start_version", b"_start_version"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__start_version) -> _WhichOneofReturnType__start_version | None: ...
 
 Global___SubscribeRequest: _TypeAlias = SubscribeRequest  # noqa: Y015
 
@@ -603,6 +776,7 @@ class SubscribeResponse(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["change", b"change"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___SubscribeResponse: _TypeAlias = SubscribeResponse  # noqa: Y015
 
@@ -658,8 +832,11 @@ class ExportConfigResponse(_message.Message):
         *,
         yaml_content: _builtins.bytes = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["yaml_content", b"yaml_content"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ExportConfigResponse: _TypeAlias = ExportConfigResponse  # noqa: Y015
 
@@ -715,5 +892,6 @@ class ImportConfigResponse(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["config_version", b"config_version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ImportConfigResponse: _TypeAlias = ImportConfigResponse  # noqa: Y015

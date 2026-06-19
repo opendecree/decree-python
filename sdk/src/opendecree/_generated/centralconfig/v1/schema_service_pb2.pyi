@@ -12,10 +12,10 @@ import builtins as _builtins
 import sys
 import typing as _typing
 
-if sys.version_info >= (3, 10):
-    from typing import TypeAlias as _TypeAlias
+if sys.version_info >= (3, 11):
+    from typing import TypeAlias as _TypeAlias, Never as _Never
 else:
-    from typing_extensions import TypeAlias as _TypeAlias
+    from typing_extensions import TypeAlias as _TypeAlias, Never as _Never
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -73,6 +73,7 @@ class CreateSchemaResponse(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["schema", b"schema"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___CreateSchemaResponse: _TypeAlias = CreateSchemaResponse  # noqa: Y015
 
@@ -118,6 +119,7 @@ class GetSchemaResponse(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["schema", b"schema"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___GetSchemaResponse: _TypeAlias = GetSchemaResponse  # noqa: Y015
 
@@ -169,8 +171,11 @@ class ListSchemasResponse(_message.Message):
         schemas: _abc.Iterable[_types_pb2.Schema] | None = ...,
         next_page_token: _builtins.str = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["next_page_token", b"next_page_token", "schemas", b"schemas"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ListSchemasResponse: _TypeAlias = ListSchemasResponse  # noqa: Y015
 
@@ -194,7 +199,10 @@ class UpdateSchemaRequest(_message.Message):
 
     @_builtins.property
     def remove_fields(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
-        """Dot-separated paths of fields to remove from the new version."""
+        """Dot-separated paths of fields to remove from the new version. Maximum
+        1 000 entries (configurable via SCHEMA_MAX_REMOVE_FIELDS). Exceeds
+        returns InvalidArgument.
+        """
 
     def __init__(
         self,
@@ -232,6 +240,7 @@ class UpdateSchemaResponse(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["schema", b"schema"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___UpdateSchemaResponse: _TypeAlias = UpdateSchemaResponse  # noqa: Y015
 
@@ -247,8 +256,11 @@ class DeleteSchemaRequest(_message.Message):
         *,
         id: _builtins.str = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["id", b"id"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___DeleteSchemaRequest: _TypeAlias = DeleteSchemaRequest  # noqa: Y015
 
@@ -259,6 +271,11 @@ class DeleteSchemaResponse(_message.Message):
     def __init__(
         self,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___DeleteSchemaResponse: _TypeAlias = DeleteSchemaResponse  # noqa: Y015
 
@@ -280,8 +297,11 @@ class PublishSchemaRequest(_message.Message):
         id: _builtins.str = ...,
         version: _builtins.int = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["id", b"id", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___PublishSchemaRequest: _TypeAlias = PublishSchemaRequest  # noqa: Y015
 
@@ -303,6 +323,7 @@ class PublishSchemaResponse(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["schema", b"schema"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___PublishSchemaResponse: _TypeAlias = PublishSchemaResponse  # noqa: Y015
 
@@ -330,8 +351,11 @@ class CreateTenantRequest(_message.Message):
         schema_id: _builtins.str = ...,
         schema_version: _builtins.int = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["name", b"name", "schema_id", b"schema_id", "schema_version", b"schema_version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___CreateTenantRequest: _TypeAlias = CreateTenantRequest  # noqa: Y015
 
@@ -351,6 +375,7 @@ class CreateTenantResponse(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["tenant", b"tenant"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___CreateTenantResponse: _TypeAlias = CreateTenantResponse  # noqa: Y015
 
@@ -366,8 +391,11 @@ class GetTenantRequest(_message.Message):
         *,
         id: _builtins.str = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["id", b"id"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___GetTenantRequest: _TypeAlias = GetTenantRequest  # noqa: Y015
 
@@ -387,6 +415,7 @@ class GetTenantResponse(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["tenant", b"tenant"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___GetTenantResponse: _TypeAlias = GetTenantResponse  # noqa: Y015
 
@@ -436,8 +465,11 @@ class ListTenantsResponse(_message.Message):
         tenants: _abc.Iterable[_types_pb2.Tenant] | None = ...,
         next_page_token: _builtins.str = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["next_page_token", b"next_page_token", "tenants", b"tenants"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ListTenantsResponse: _TypeAlias = ListTenantsResponse  # noqa: Y015
 
@@ -494,6 +526,7 @@ class UpdateTenantResponse(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["tenant", b"tenant"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___UpdateTenantResponse: _TypeAlias = UpdateTenantResponse  # noqa: Y015
 
@@ -509,8 +542,11 @@ class DeleteTenantRequest(_message.Message):
         *,
         id: _builtins.str = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["id", b"id"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___DeleteTenantRequest: _TypeAlias = DeleteTenantRequest  # noqa: Y015
 
@@ -521,6 +557,11 @@ class DeleteTenantResponse(_message.Message):
     def __init__(
         self,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___DeleteTenantResponse: _TypeAlias = DeleteTenantResponse  # noqa: Y015
 
@@ -550,8 +591,11 @@ class LockFieldRequest(_message.Message):
         field_path: _builtins.str = ...,
         locked_values: _abc.Iterable[_builtins.str] | None = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["field_path", b"field_path", "locked_values", b"locked_values", "tenant_id", b"tenant_id"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___LockFieldRequest: _TypeAlias = LockFieldRequest  # noqa: Y015
 
@@ -562,6 +606,11 @@ class LockFieldResponse(_message.Message):
     def __init__(
         self,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___LockFieldResponse: _TypeAlias = LockFieldResponse  # noqa: Y015
 
@@ -581,8 +630,11 @@ class UnlockFieldRequest(_message.Message):
         tenant_id: _builtins.str = ...,
         field_path: _builtins.str = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["field_path", b"field_path", "tenant_id", b"tenant_id"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___UnlockFieldRequest: _TypeAlias = UnlockFieldRequest  # noqa: Y015
 
@@ -593,6 +645,11 @@ class UnlockFieldResponse(_message.Message):
     def __init__(
         self,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___UnlockFieldResponse: _TypeAlias = UnlockFieldResponse  # noqa: Y015
 
@@ -601,15 +658,26 @@ class ListFieldLocksRequest(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     TENANT_ID_FIELD_NUMBER: _builtins.int
+    PAGE_SIZE_FIELD_NUMBER: _builtins.int
+    PAGE_TOKEN_FIELD_NUMBER: _builtins.int
     tenant_id: _builtins.str
     """Tenant ID (UUID)."""
+    page_size: _builtins.int
+    """Maximum number of locks to return. Defaults to 50, max 200."""
+    page_token: _builtins.str
+    """Pagination token from a previous ListFieldLocksResponse."""
     def __init__(
         self,
         *,
         tenant_id: _builtins.str = ...,
+        page_size: _builtins.int = ...,
+        page_token: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["tenant_id", b"tenant_id"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["page_size", b"page_size", "page_token", b"page_token", "tenant_id", b"tenant_id"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ListFieldLocksRequest: _TypeAlias = ListFieldLocksRequest  # noqa: Y015
 
@@ -618,17 +686,24 @@ class ListFieldLocksResponse(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     LOCKS_FIELD_NUMBER: _builtins.int
+    NEXT_PAGE_TOKEN_FIELD_NUMBER: _builtins.int
+    next_page_token: _builtins.str
+    """Token for the next page; empty when no more results."""
     @_builtins.property
     def locks(self) -> _containers.RepeatedCompositeFieldContainer[_types_pb2.FieldLock]:
-        """All active field locks for the tenant."""
+        """Active field locks for the tenant (up to page_size)."""
 
     def __init__(
         self,
         *,
         locks: _abc.Iterable[_types_pb2.FieldLock] | None = ...,
+        next_page_token: _builtins.str = ...,
     ) -> None: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["locks", b"locks"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["locks", b"locks", "next_page_token", b"next_page_token"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ListFieldLocksResponse: _TypeAlias = ListFieldLocksResponse  # noqa: Y015
 
@@ -687,8 +762,11 @@ class ExportSchemaResponse(_message.Message):
         *,
         yaml_content: _builtins.bytes = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["yaml_content", b"yaml_content"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ExportSchemaResponse: _TypeAlias = ExportSchemaResponse  # noqa: Y015
 
@@ -720,8 +798,11 @@ class ImportSchemaRequest(_message.Message):
         yaml_content: _builtins.bytes = ...,
         auto_publish: _builtins.bool = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["auto_publish", b"auto_publish", "yaml_content", b"yaml_content"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ImportSchemaRequest: _TypeAlias = ImportSchemaRequest  # noqa: Y015
 
@@ -743,5 +824,6 @@ class ImportSchemaResponse(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["schema", b"schema"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ImportSchemaResponse: _TypeAlias = ImportSchemaResponse  # noqa: Y015
