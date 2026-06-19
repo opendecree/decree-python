@@ -5,7 +5,7 @@ import warnings
 
 from opendecree._generated.centralconfig.v1 import server_service_pb2 as centralconfig_dot_v1_dot_server__service__pb2
 
-GRPC_GENERATED_VERSION = '1.80.0'
+GRPC_GENERATED_VERSION = '1.81.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class ServerServiceStub(object):
+class ServerServiceStub:
     """ServerService provides server metadata and capability discovery.
     Always registered, no authentication required.
     """
@@ -43,7 +43,7 @@ class ServerServiceStub(object):
                 _registered_method=True)
 
 
-class ServerServiceServicer(object):
+class ServerServiceServicer:
     """ServerService provides server metadata and capability discovery.
     Always registered, no authentication required.
     """
@@ -71,7 +71,7 @@ def add_ServerServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class ServerService(object):
+class ServerService:
     """ServerService provides server metadata and capability discovery.
     Always registered, no authentication required.
     """

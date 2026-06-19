@@ -73,12 +73,27 @@ class ConfigServiceStub:
     This does not delete intermediate versions — it creates a new version that
     copies the target's values.
     """
+    DiffVersions: _grpc.UnaryUnaryMultiCallable[_config_service_pb2.DiffVersionsRequest, _config_service_pb2.DiffVersionsResponse]
+    """DiffVersions compares the full resolved config at two versions and returns
+    the fields that differ. Unchanged fields are omitted. Results are sorted by
+    field path for deterministic output.
+    """
     Subscribe: _grpc.UnaryStreamMultiCallable[_config_service_pb2.SubscribeRequest, _config_service_pb2.SubscribeResponse]
     """Real-time subscriptions via server-streaming.
 
     Subscribe opens a server-streaming connection that pushes ConfigChange events
-    whenever the tenant's configuration is modified. The stream remains open until
-    the client disconnects or the server shuts down.
+    whenever the tenant's configuration is modified.
+
+    Stream lifetime:
+      - Client disconnect: stream ends immediately.
+      - Server closes with OK status: the server-side pub/sub backend restarted
+        (e.g. Redis reconnect). Clients MUST reconnect with exponential backoff;
+        an OK close does NOT indicate the subscription is permanently gone.
+      - Server closes with error status: treat as a transient failure and reconnect
+        with backoff.
+
+    Use the configwatcher package for a high-level client that handles reconnection
+    automatically.
     """
     ExportConfig: _grpc.UnaryUnaryMultiCallable[_config_service_pb2.ExportConfigRequest, _config_service_pb2.ExportConfigResponse]
     """Import/export.
@@ -133,12 +148,27 @@ class ConfigServiceAsyncStub(ConfigServiceStub):
     This does not delete intermediate versions — it creates a new version that
     copies the target's values.
     """
+    DiffVersions: _aio.UnaryUnaryMultiCallable[_config_service_pb2.DiffVersionsRequest, _config_service_pb2.DiffVersionsResponse]  # type: ignore[assignment]
+    """DiffVersions compares the full resolved config at two versions and returns
+    the fields that differ. Unchanged fields are omitted. Results are sorted by
+    field path for deterministic output.
+    """
     Subscribe: _aio.UnaryStreamMultiCallable[_config_service_pb2.SubscribeRequest, _config_service_pb2.SubscribeResponse]  # type: ignore[assignment]
     """Real-time subscriptions via server-streaming.
 
     Subscribe opens a server-streaming connection that pushes ConfigChange events
-    whenever the tenant's configuration is modified. The stream remains open until
-    the client disconnects or the server shuts down.
+    whenever the tenant's configuration is modified.
+
+    Stream lifetime:
+      - Client disconnect: stream ends immediately.
+      - Server closes with OK status: the server-side pub/sub backend restarted
+        (e.g. Redis reconnect). Clients MUST reconnect with exponential backoff;
+        an OK close does NOT indicate the subscription is permanently gone.
+      - Server closes with error status: treat as a transient failure and reconnect
+        with backoff.
+
+    Use the configwatcher package for a high-level client that handles reconnection
+    automatically.
     """
     ExportConfig: _aio.UnaryUnaryMultiCallable[_config_service_pb2.ExportConfigRequest, _config_service_pb2.ExportConfigResponse]  # type: ignore[assignment]
     """Import/export.
@@ -240,6 +270,17 @@ class ConfigServiceServicer(metaclass=_abc_1.ABCMeta):
         """
 
     @_abc_1.abstractmethod
+    def DiffVersions(
+        self,
+        request: _config_service_pb2.DiffVersionsRequest,
+        context: _ServicerContext,
+    ) -> _typing.Union[_config_service_pb2.DiffVersionsResponse, _abc.Awaitable[_config_service_pb2.DiffVersionsResponse]]:
+        """DiffVersions compares the full resolved config at two versions and returns
+        the fields that differ. Unchanged fields are omitted. Results are sorted by
+        field path for deterministic output.
+        """
+
+    @_abc_1.abstractmethod
     def Subscribe(
         self,
         request: _config_service_pb2.SubscribeRequest,
@@ -248,8 +289,18 @@ class ConfigServiceServicer(metaclass=_abc_1.ABCMeta):
         """Real-time subscriptions via server-streaming.
 
         Subscribe opens a server-streaming connection that pushes ConfigChange events
-        whenever the tenant's configuration is modified. The stream remains open until
-        the client disconnects or the server shuts down.
+        whenever the tenant's configuration is modified.
+
+        Stream lifetime:
+          - Client disconnect: stream ends immediately.
+          - Server closes with OK status: the server-side pub/sub backend restarted
+            (e.g. Redis reconnect). Clients MUST reconnect with exponential backoff;
+            an OK close does NOT indicate the subscription is permanently gone.
+          - Server closes with error status: treat as a transient failure and reconnect
+            with backoff.
+
+        Use the configwatcher package for a high-level client that handles reconnection
+        automatically.
         """
 
     @_abc_1.abstractmethod

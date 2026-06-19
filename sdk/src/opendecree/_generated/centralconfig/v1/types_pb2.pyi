@@ -14,10 +14,10 @@ import builtins as _builtins
 import sys
 import typing as _typing
 
-if sys.version_info >= (3, 10):
-    from typing import TypeAlias as _TypeAlias
+if sys.version_info >= (3, 11):
+    from typing import TypeAlias as _TypeAlias, Never as _Never
 else:
-    from typing_extensions import TypeAlias as _TypeAlias
+    from typing_extensions import TypeAlias as _TypeAlias, Never as _Never
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -108,6 +108,7 @@ class FieldConstraints(_message.Message):
     EXCLUSIVE_MAX_FIELD_NUMBER: _builtins.int
     MIN_LENGTH_FIELD_NUMBER: _builtins.int
     MAX_LENGTH_FIELD_NUMBER: _builtins.int
+    ALLOWED_SCHEMES_FIELD_NUMBER: _builtins.int
     min: _builtins.float
     """For integer/number/duration: minimum allowed value (inclusive, >=)."""
     max: _builtins.float
@@ -134,6 +135,13 @@ class FieldConstraints(_message.Message):
         Applies to any field type.
         """
 
+    @_builtins.property
+    def allowed_schemes(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
+        """For url: allowed URI schemes (e.g. "https", "http").
+        If non-empty, schemes not in this list are rejected with InvalidArgument.
+        Defaults to ["http", "https"] when empty.
+        """
+
     def __init__(
         self,
         *,
@@ -146,10 +154,11 @@ class FieldConstraints(_message.Message):
         exclusive_max: _builtins.float | None = ...,
         min_length: _builtins.int | None = ...,
         max_length: _builtins.int | None = ...,
+        allowed_schemes: _abc.Iterable[_builtins.str] | None = ...,
     ) -> None: ...
     _HasFieldArgType: _TypeAlias = _typing.Literal["_exclusive_max", b"_exclusive_max", "_exclusive_min", b"_exclusive_min", "_json_schema", b"_json_schema", "_max", b"_max", "_max_length", b"_max_length", "_min", b"_min", "_min_length", b"_min_length", "_regex", b"_regex", "exclusive_max", b"exclusive_max", "exclusive_min", b"exclusive_min", "json_schema", b"json_schema", "max", b"max", "max_length", b"max_length", "min", b"min", "min_length", b"min_length", "regex", b"regex"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_exclusive_max", b"_exclusive_max", "_exclusive_min", b"_exclusive_min", "_json_schema", b"_json_schema", "_max", b"_max", "_max_length", b"_max_length", "_min", b"_min", "_min_length", b"_min_length", "_regex", b"_regex", "enum_values", b"enum_values", "exclusive_max", b"exclusive_max", "exclusive_min", b"exclusive_min", "json_schema", b"json_schema", "max", b"max", "max_length", b"max_length", "min", b"min", "min_length", b"min_length", "regex", b"regex"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_exclusive_max", b"_exclusive_max", "_exclusive_min", b"_exclusive_min", "_json_schema", b"_json_schema", "_max", b"_max", "_max_length", b"_max_length", "_min", b"_min", "_min_length", b"_min_length", "_regex", b"_regex", "allowed_schemes", b"allowed_schemes", "enum_values", b"enum_values", "exclusive_max", b"exclusive_max", "exclusive_min", b"exclusive_min", "json_schema", b"json_schema", "max", b"max", "max_length", b"max_length", "min", b"min", "min_length", b"min_length", "regex", b"regex"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__exclusive_max: _TypeAlias = _typing.Literal["exclusive_max"]  # noqa: Y015
     _WhichOneofArgType__exclusive_max: _TypeAlias = _typing.Literal["_exclusive_max", b"_exclusive_max"]  # noqa: Y015
@@ -211,6 +220,7 @@ class SchemaField(_message.Message):
         def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
         _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+        def WhichOneof(self, oneof_group: _Never) -> None: ...
 
     PATH_FIELD_NUMBER: _builtins.int
     TYPE_FIELD_NUMBER: _builtins.int
@@ -362,8 +372,11 @@ class FieldExample(_message.Message):
         value: _builtins.str = ...,
         summary: _builtins.str = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["summary", b"summary", "value", b"value"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___FieldExample: _TypeAlias = FieldExample  # noqa: Y015
 
@@ -387,8 +400,11 @@ class ExternalDocs(_message.Message):
         description: _builtins.str = ...,
         url: _builtins.str = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["description", b"description", "url", b"url"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ExternalDocs: _TypeAlias = ExternalDocs  # noqa: Y015
 
@@ -417,8 +433,11 @@ class SchemaInfo(_message.Message):
             key: _builtins.str = ...,
             value: _builtins.str = ...,
         ) -> None: ...
+        _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+        def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
         _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+        def WhichOneof(self, oneof_group: _Never) -> None: ...
 
     TITLE_FIELD_NUMBER: _builtins.int
     AUTHOR_FIELD_NUMBER: _builtins.int
@@ -453,6 +472,7 @@ class SchemaInfo(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["author", b"author", "contact", b"contact", "labels", b"labels", "title", b"title"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___SchemaInfo: _TypeAlias = SchemaInfo  # noqa: Y015
 
@@ -480,8 +500,11 @@ class SchemaContact(_message.Message):
         email: _builtins.str = ...,
         url: _builtins.str = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["email", b"email", "name", b"name", "url", b"url"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___SchemaContact: _TypeAlias = SchemaContact  # noqa: Y015
 
@@ -615,8 +638,11 @@ class DependentRequiredEntry(_message.Message):
         trigger_field: _builtins.str = ...,
         dependent_fields: _abc.Iterable[_builtins.str] | None = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["dependent_fields", b"dependent_fields", "trigger_field", b"trigger_field"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___DependentRequiredEntry: _TypeAlias = DependentRequiredEntry  # noqa: Y015
 
@@ -672,8 +698,11 @@ class ValidationRule(_message.Message):
         severity: _builtins.str = ...,
         reason: _builtins.str = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["message", b"message", "path", b"path", "reason", b"reason", "rule", b"rule", "severity", b"severity"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ValidationRule: _TypeAlias = ValidationRule  # noqa: Y015
 
@@ -725,6 +754,7 @@ class Tenant(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["created_at", b"created_at", "id", b"id", "name", b"name", "schema_id", b"schema_id", "schema_version", b"schema_version", "updated_at", b"updated_at"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___Tenant: _TypeAlias = Tenant  # noqa: Y015
 
@@ -756,8 +786,11 @@ class FieldLock(_message.Message):
         field_path: _builtins.str = ...,
         locked_values: _abc.Iterable[_builtins.str] | None = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["field_path", b"field_path", "locked_values", b"locked_values", "tenant_id", b"tenant_id"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___FieldLock: _TypeAlias = FieldLock  # noqa: Y015
 
@@ -905,6 +938,7 @@ class ConfigVersion(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["created_at", b"created_at", "created_by", b"created_by", "description", b"description", "id", b"id", "tenant_id", b"tenant_id", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ConfigVersion: _TypeAlias = ConfigVersion  # noqa: Y015
 
@@ -932,8 +966,11 @@ class Config(_message.Message):
         version: _builtins.int = ...,
         values: _abc.Iterable[Global___ConfigValue] | None = ...,
     ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["tenant_id", b"tenant_id", "values", b"values", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___Config: _TypeAlias = Config  # noqa: Y015
 
@@ -987,6 +1024,7 @@ class ConfigChange(_message.Message):
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
     _ClearFieldArgType: _TypeAlias = _typing.Literal["changed_at", b"changed_at", "changed_by", b"changed_by", "field_path", b"field_path", "new_value", b"new_value", "old_value", b"old_value", "tenant_id", b"tenant_id", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ConfigChange: _TypeAlias = ConfigChange  # noqa: Y015
 
@@ -999,6 +1037,26 @@ class AuditEntry(_message.Message):
 
     DESCRIPTOR: _descriptor.Descriptor
 
+    @_typing.final
+    class MetadataEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
+
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.str
+        def __init__(
+            self,
+            *,
+            key: _builtins.str = ...,
+            value: _builtins.str = ...,
+        ) -> None: ...
+        _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+        def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
+        def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+        def WhichOneof(self, oneof_group: _Never) -> None: ...
+
     ID_FIELD_NUMBER: _builtins.int
     TENANT_ID_FIELD_NUMBER: _builtins.int
     ACTOR_FIELD_NUMBER: _builtins.int
@@ -1008,6 +1066,11 @@ class AuditEntry(_message.Message):
     NEW_VALUE_FIELD_NUMBER: _builtins.int
     CONFIG_VERSION_FIELD_NUMBER: _builtins.int
     CREATED_AT_FIELD_NUMBER: _builtins.int
+    OBJECT_KIND_FIELD_NUMBER: _builtins.int
+    ENTRY_HASH_FIELD_NUMBER: _builtins.int
+    PREVIOUS_HASH_FIELD_NUMBER: _builtins.int
+    CHAIN_EPOCH_FIELD_NUMBER: _builtins.int
+    METADATA_FIELD_NUMBER: _builtins.int
     id: _builtins.str
     """Server-assigned unique identifier (UUID)."""
     tenant_id: _builtins.str
@@ -1026,9 +1089,28 @@ class AuditEntry(_message.Message):
     """
     config_version: _builtins.int
     """The config version number created by this action."""
+    object_kind: _builtins.str
+    """The kind of object affected ("field", "schema", "tenant", or "lock")."""
+    entry_hash: _builtins.str
+    """SHA-256 hash of this entry's immutable fields, chained to previous_hash."""
+    previous_hash: _builtins.str
+    """entry_hash of the previous entry in this tenant's chain ("" for the first)."""
+    chain_epoch: _builtins.int
+    """Hash scheme epoch. 0 = legacy (structural fields only).
+    1+ = full payload included in the hash (field_path, old_value, new_value,
+    config_version, metadata). Clients must use the same epoch when
+    recomputing entry_hash for verification.
+    """
     @_builtins.property
     def created_at(self) -> _timestamp_pb2.Timestamp:
         """When the audit entry was created."""
+
+    @_builtins.property
+    def metadata(self) -> _containers.ScalarMap[_builtins.str, _builtins.str]:
+        """Arbitrary key-value metadata attached to this audit entry.
+        Populated by the server when additional context was recorded (e.g. caller IP,
+        request ID). Empty when no metadata was stored.
+        """
 
     def __init__(
         self,
@@ -1042,10 +1124,15 @@ class AuditEntry(_message.Message):
         new_value: _builtins.str | None = ...,
         config_version: _builtins.int | None = ...,
         created_at: _timestamp_pb2.Timestamp | None = ...,
+        object_kind: _builtins.str = ...,
+        entry_hash: _builtins.str = ...,
+        previous_hash: _builtins.str = ...,
+        chain_epoch: _builtins.int = ...,
+        metadata: _abc.Mapping[_builtins.str, _builtins.str] | None = ...,
     ) -> None: ...
     _HasFieldArgType: _TypeAlias = _typing.Literal["_config_version", b"_config_version", "_field_path", b"_field_path", "_new_value", b"_new_value", "_old_value", b"_old_value", "config_version", b"config_version", "created_at", b"created_at", "field_path", b"field_path", "new_value", b"new_value", "old_value", b"old_value"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_config_version", b"_config_version", "_field_path", b"_field_path", "_new_value", b"_new_value", "_old_value", b"_old_value", "action", b"action", "actor", b"actor", "config_version", b"config_version", "created_at", b"created_at", "field_path", b"field_path", "id", b"id", "new_value", b"new_value", "old_value", b"old_value", "tenant_id", b"tenant_id"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_config_version", b"_config_version", "_field_path", b"_field_path", "_new_value", b"_new_value", "_old_value", b"_old_value", "action", b"action", "actor", b"actor", "chain_epoch", b"chain_epoch", "config_version", b"config_version", "created_at", b"created_at", "entry_hash", b"entry_hash", "field_path", b"field_path", "id", b"id", "metadata", b"metadata", "new_value", b"new_value", "object_kind", b"object_kind", "old_value", b"old_value", "previous_hash", b"previous_hash", "tenant_id", b"tenant_id"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__config_version: _TypeAlias = _typing.Literal["config_version"]  # noqa: Y015
     _WhichOneofArgType__config_version: _TypeAlias = _typing.Literal["_config_version", b"_config_version"]  # noqa: Y015

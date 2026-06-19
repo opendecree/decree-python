@@ -5,7 +5,7 @@ import warnings
 
 from opendecree._generated.centralconfig.v1 import audit_service_pb2 as centralconfig_dot_v1_dot_audit__service__pb2
 
-GRPC_GENERATED_VERSION = '1.80.0'
+GRPC_GENERATED_VERSION = '1.81.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class AuditServiceStub(object):
+class AuditServiceStub:
     """AuditService provides read-only access to the change history and usage
     statistics for tenant configurations.
 
@@ -60,9 +60,14 @@ class AuditServiceStub(object):
                 request_serializer=centralconfig_dot_v1_dot_audit__service__pb2.GetUnusedFieldsRequest.SerializeToString,
                 response_deserializer=centralconfig_dot_v1_dot_audit__service__pb2.GetUnusedFieldsResponse.FromString,
                 _registered_method=True)
+        self.VerifyChain = channel.unary_unary(
+                '/centralconfig.v1.AuditService/VerifyChain',
+                request_serializer=centralconfig_dot_v1_dot_audit__service__pb2.VerifyChainRequest.SerializeToString,
+                response_deserializer=centralconfig_dot_v1_dot_audit__service__pb2.VerifyChainResponse.FromString,
+                _registered_method=True)
 
 
-class AuditServiceServicer(object):
+class AuditServiceServicer:
     """AuditService provides read-only access to the change history and usage
     statistics for tenant configurations.
 
@@ -101,6 +106,14 @@ class AuditServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def VerifyChain(self, request, context):
+        """VerifyChain walks a tenant's audit chain and reports any tampered entries.
+        An empty tenant_id verifies the global (schema-level) chain.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_AuditServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -124,6 +137,11 @@ def add_AuditServiceServicer_to_server(servicer, server):
                     request_deserializer=centralconfig_dot_v1_dot_audit__service__pb2.GetUnusedFieldsRequest.FromString,
                     response_serializer=centralconfig_dot_v1_dot_audit__service__pb2.GetUnusedFieldsResponse.SerializeToString,
             ),
+            'VerifyChain': grpc.unary_unary_rpc_method_handler(
+                    servicer.VerifyChain,
+                    request_deserializer=centralconfig_dot_v1_dot_audit__service__pb2.VerifyChainRequest.FromString,
+                    response_serializer=centralconfig_dot_v1_dot_audit__service__pb2.VerifyChainResponse.SerializeToString,
+            ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
             'centralconfig.v1.AuditService', rpc_method_handlers)
@@ -132,7 +150,7 @@ def add_AuditServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class AuditService(object):
+class AuditService:
     """AuditService provides read-only access to the change history and usage
     statistics for tenant configurations.
 
@@ -239,6 +257,33 @@ class AuditService(object):
             '/centralconfig.v1.AuditService/GetUnusedFields',
             centralconfig_dot_v1_dot_audit__service__pb2.GetUnusedFieldsRequest.SerializeToString,
             centralconfig_dot_v1_dot_audit__service__pb2.GetUnusedFieldsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def VerifyChain(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/centralconfig.v1.AuditService/VerifyChain',
+            centralconfig_dot_v1_dot_audit__service__pb2.VerifyChainRequest.SerializeToString,
+            centralconfig_dot_v1_dot_audit__service__pb2.VerifyChainResponse.FromString,
             options,
             channel_credentials,
             insecure,
