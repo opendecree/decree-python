@@ -13,7 +13,7 @@ jobs:
     name: Regen stubs for ${{ github.event.client_payload.version }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: true
 
