@@ -29,7 +29,7 @@ dependencies = [
 
 [project.optional-dependencies]
 otel = [
-    "opentelemetry-instrumentation-grpc>=0.63b1",
+    "opentelemetry-instrumentation-grpc>=0.64b0",
 ]
 docs = [
     "mkdocs-material>=9.7.6",
