@@ -16,10 +16,15 @@ updates:
           - minor
           - patch
     ignore:
-      # grpcio-tools 1.81.1 (latest) caps protobuf<7; unignore once a
-      # grpcio-tools release supports protobuf 7.x.
+      # protobuf is capped <7 by our own pyproject.toml pin; unignore once we
+      # deliberately migrate the SDK to protobuf 7.x.
       - dependency-name: "protobuf"
         versions: [">=7"]
+      # grpcio-tools 1.82.1 raised its own floor to protobuf>=7.35.1,
+      # incompatible with our protobuf<7 pin (decree-python#174). Unignore
+      # together with the protobuf migration above.
+      - dependency-name: "grpcio-tools"
+        versions: [">=1.82.1"]
 
   - package-ecosystem: github-actions
     directory: /
