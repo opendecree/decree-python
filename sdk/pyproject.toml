@@ -22,7 +22,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "grpcio>=1.81.1,<2",
+    "grpcio>=1.82.1,<2",
     "protobuf>=6.33.6,<7",
     "googleapis-common-protos>=1.75.0,<2",
 ]
