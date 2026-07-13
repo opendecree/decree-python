@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=82.0.1"]
+requires = ["setuptools>=83.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -22,7 +22,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "grpcio>=1.81.1,<2",
+    "grpcio>=1.82.1,<2",
     "protobuf>=6.33.6,<7",
     "googleapis-common-protos>=1.75.0,<2",
 ]
@@ -33,7 +33,7 @@ otel = [
 ]
 docs = [
     "mkdocs-material>=9.7.6",
-    "mkdocstrings[python]>=1.0.4",
+    "mkdocstrings[python]>=1.0.5",
 ]
 dev = [
     "pytest>=9.1.1",
@@ -41,7 +41,7 @@ dev = [
     "pytest-asyncio>=1.4.0",
     "mypy>=2.1.0",
     "mypy-protobuf>=5.1.0",
-    "ruff>=0.15.20",
+    "ruff>=0.15.21",
     "grpcio-tools>=1.81.1",
 ]
 
