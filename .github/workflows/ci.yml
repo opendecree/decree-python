@@ -188,7 +188,7 @@ jobs:
           cache-to: type=gha,scope=py-examples-tools,mode=max
 
       - name: Set up Go (for CLI build)
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version-file: decree/cmd/decree/go.mod
           cache-dependency-path: decree/cmd/decree/go.sum
