@@ -26,7 +26,7 @@ jobs:
 
       - name: Open PR
         # peter-evans/create-pull-request@v7
-        uses: peter-evans/create-pull-request@7ec5aae3c91d101b005af46adc760d265911886a
+        uses: peter-evans/create-pull-request@11fa467881691ac900904a2eea702c5ea848ad13
         with:
           token: ${{ secrets.PROJECT_TOKEN }}
           commit-message: "chore: regen stubs for decree ${{ github.event.client_payload.version }}"
