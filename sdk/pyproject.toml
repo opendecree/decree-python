@@ -41,7 +41,7 @@ dev = [
     "pytest-asyncio>=1.4.0",
     "mypy>=2.3.1",
     "mypy-protobuf>=5.1.0",
-    "ruff>=0.16.3",
+    "ruff>=0.16.4",
     "grpcio-tools>=1.81.1",
 ]
 
