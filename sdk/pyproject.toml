@@ -24,7 +24,7 @@ classifiers = [
 dependencies = [
     "grpcio>=1.83.0,<2",
     "protobuf>=6.33.6,<7",
-    "googleapis-common-protos>=1.75.1,<2",
+    "googleapis-common-protos>=1.75.2,<2",
 ]
 
 [project.optional-dependencies]
