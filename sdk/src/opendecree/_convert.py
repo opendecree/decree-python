@@ -28,13 +28,17 @@ def _parse_timedelta(s: str) -> timedelta:
     """Parse a Go-style duration string (e.g., '24h', '30m', '500ms') to timedelta.
 
     Supported units: h (hours), m (minutes), s (seconds), ms (milliseconds),
-    us/µs (microseconds), ns (nanoseconds). Compound forms like '1h30m' work.
+    us/µs (microseconds), ns (nanoseconds). Compound forms like '1h30m' work,
+    with an optional leading sign applied to the entire duration.
     """
     if not s:
         return timedelta()
 
     total_seconds = 0.0
-    i = 0
+    sign = -1 if s[0] == "-" else 1
+    i = 1 if s[0] in "+-" else 0
+    if i == len(s):
+        raise ValueError(f"invalid duration: {s!r}")
     while i < len(s):
         # Parse number.
         start = i
@@ -66,7 +70,7 @@ def _parse_timedelta(s: str) -> timedelta:
             case _:
                 raise ValueError(f"unknown duration unit: {unit!r} in {s!r}")
 
-    return timedelta(seconds=total_seconds)
+    return timedelta(seconds=sign * total_seconds)
 
 
 def convert_value(raw: str, target_type: type) -> object:
@@ -144,9 +148,11 @@ def typed_value_to_string(tv: object) -> str:
                 if total_s >= 60 and total_s % 60 == 0:
                     return f"{total_s // 60}m"
                 return f"{total_s}s"
-            # Has sub-second component — use float seconds.
-            total_float = total_ns / 1_000_000_000
-            return f"{total_float}s"
+            # Keep fractional seconds in decimal notation that the parser accepts.
+            whole_seconds, nanos = divmod(abs(total_ns), 1_000_000_000)
+            sign = "-" if total_ns < 0 else ""
+            fraction = f"{nanos:09d}".rstrip("0")
+            return f"{sign}{whole_seconds}.{fraction}s"
         case "integer_value" | "number_value" | "string_value" | "url_value" | "json_value":
             return str(val)
         case _:

@@ -71,6 +71,27 @@ def test_convert_timedelta_compound():
     assert convert_value("1h30m", timedelta) == timedelta(hours=1, minutes=30)
 
 
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("-1s", timedelta(seconds=-1)),
+        ("-1h30m", -timedelta(hours=1, minutes=30)),
+        ("-500ms", timedelta(milliseconds=-500)),
+        ("-1us", timedelta(microseconds=-1)),
+        ("+1h30m", timedelta(hours=1, minutes=30)),
+        ("-0s", timedelta()),
+    ],
+)
+def test_convert_timedelta_signed(raw, expected):
+    assert convert_value(raw, timedelta) == expected
+
+
+@pytest.mark.parametrize("raw", ["+", "-", "1h-30m", "--1s"])
+def test_convert_timedelta_invalid_sign(raw):
+    with pytest.raises(TypeMismatchError, match="cannot convert"):
+        convert_value(raw, timedelta)
+
+
 def test_convert_timedelta_invalid():
     with pytest.raises(TypeMismatchError, match="cannot convert"):
         convert_value("not-a-duration", timedelta)
@@ -275,6 +296,28 @@ def test_typed_value_to_string_duration_fractional():
     d = Duration(seconds=1, nanos=500_000_000)
     tv = types_pb2.TypedValue(duration_value=d)
     assert typed_value_to_string(tv) == "1.5s"
+
+
+@pytest.mark.parametrize(
+    ("seconds", "nanos", "expected", "converted"),
+    [
+        (0, 1, "0.000000001s", timedelta()),
+        (0, 1_000, "0.000001s", timedelta(microseconds=1)),
+        (0, -1_000, "-0.000001s", timedelta(microseconds=-1)),
+        (-1, -500_000_000, "-1.5s", timedelta(seconds=-1.5)),
+        (-60, 0, "-60s", timedelta(minutes=-1)),
+        (86_400, 1_000, "86400.000001s", timedelta(days=1, microseconds=1)),
+    ],
+)
+def test_typed_value_to_string_duration_roundtrip(seconds, nanos, expected, converted):
+    from google.protobuf.duration_pb2 import Duration
+
+    from opendecree._generated.centralconfig.v1 import types_pb2
+
+    tv = types_pb2.TypedValue(duration_value=Duration(seconds=seconds, nanos=nanos))
+    raw = typed_value_to_string(tv)
+    assert raw == expected
+    assert convert_value(raw, timedelta) == converted
 
 
 def test_typed_value_to_string_time():
